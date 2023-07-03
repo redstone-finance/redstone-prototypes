@@ -1,0 +1,12 @@
+[
+  {
+    "name": "vesta",
+    "address": "0x36497bcfea36a3ba831e8322cad35be1663d347c",
+    "network": "arbitrum"
+  },
+  {
+    "name": "swell",
+    "address": "0x68ba9602B2AeE30847412109D2eE89063bf08Ec2",
+    "network": "ethereum"
+  }
+]
