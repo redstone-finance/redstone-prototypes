@@ -25,9 +25,6 @@ async function calculateCumulativeGasCosts(contractAddress) {
       cumulativeGasCost = cumulativeGasCost.add(gasCost);
     }
 
-    // Convert the cumulative gas cost to ETH
-    //  cumulativeGasCost = cumulativeGasCost.div(1e9); // 1e9 Gwei = 1 ETH ?
-
     const cumulativeGasCostInEth = ethers.utils.formatUnits(
       cumulativeGasCost,
       "ether"

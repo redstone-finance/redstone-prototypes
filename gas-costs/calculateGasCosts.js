@@ -2,7 +2,7 @@ const axios = require("axios");
 const dotenv = require("dotenv");
 const contracts = require("./contracts.json");
 
-dotenv.config();
+dotenv.config({ path: ".env.example" });
 
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
 const ARBISCAN_API_KEY = process.env.ARBISCAN_API_KEY;
@@ -52,6 +52,6 @@ async function calculateCumulativeGasCosts(contractName) {
   }
 }
 
-// Example usage
-calculateCumulativeGasCosts("swell");
-calculateCumulativeGasCosts("vesta");
+// Example usage: node calculateGasCosts.js swell or npm start swell
+const contractName = process.argv[2];
+calculateCumulativeGasCosts(contractName);

@@ -1,0 +1,15 @@
+{
+  "name": "gas-costs",
+  "version": "1.0.0",
+  "description": "Calculate cumulative gas costs for contracts",
+  "main": "calculateGasCosts.js",
+  "dependencies": {
+    "axios": "^1.4.0",
+    "dotenv": "^16.3.1"
+  },
+  "scripts": {
+    "start": "node calculateGasCosts.js"
+  },
+  "author": "https://github.com/damiad",
+  "license": "MIT"
+}
