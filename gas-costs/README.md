@@ -59,4 +59,4 @@ Feel free to modify the `.env.example` file provided in the repository to create
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](../LICENSE) file for details.
