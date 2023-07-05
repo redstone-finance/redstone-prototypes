@@ -10,7 +10,7 @@ const provider = new ethers.providers.JsonRpcProvider(
   `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`
 );
 
-const address = "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506"; // SushiSwap Router02 address
+const address = "0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f"; // SushiSwap Router02 address
 
 const abi = [
   "function getAmountsOut(uint256 amountIn, address[] memory path) public view returns (uint256[] memory amounts)",
@@ -52,12 +52,10 @@ async function getWethPriceInUSDC() {
 
 // Checks how much WETH you will receive for a given USDC amount from SushiSwap
 async function getWethAmount(usdcAmount) {
-  console.log("OK"); //todo: not working
   const amounts = await contract.getAmountsOut(usdcAmount, [
     usdcAddress,
     wethAddress,
   ]);
-  console.log("NOT OK");
   const wethAmount = ethers.utils.formatUnits(amounts[1].toString(), 18);
   return wethAmount;
 }
@@ -82,7 +80,8 @@ async function calculateWethAmount() {
     expectedWethAmount = usdcAmount / currentPrice;
 
     const differencePercentage =
-      ((receivedWethAmount - expectedWethAmount) / expectedWethAmount) * 100;
+      ((receivedWethAmount - expectedWethAmount) / expectedWethAmount) * 100 +
+      0.3; // 0.3 is gas fee
     const priceInUSD = (usdcPriceInUSD.value * usdcAmount) / 1e6;
 
     console.log(
