@@ -10,7 +10,7 @@ const provider = new ethers.providers.JsonRpcProvider(
   `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`
 );
 
-const address = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"; // Uniswap V2 Router address
+const address = "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506"; // SushiSwap Router02 address
 
 const abi = [
   "function getAmountsOut(uint256 amountIn, address[] memory path) public view returns (uint256[] memory amounts)",
@@ -25,9 +25,9 @@ const contract = new ethers.Contract(address, abi, provider);
 const usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"; // USDC address
 const wethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"; // WETH address
 
-// Get the price of WETH in USDC from Uniswap V2
+// Get the price of WETH in USDC from SushiSwap
 async function getWethPriceInUSDC() {
-  const factoryAddress = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"; // Uniswap V2 Factory address
+  const factoryAddress = "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac"; // SushiSwap Factory address
   const factoryAbi = [
     "function getPair(address tokenA, address tokenB) external view returns (address pair)",
   ];
@@ -50,12 +50,14 @@ async function getWethPriceInUSDC() {
   return wethPriceInUSDC;
 }
 
-// Checks how much WETH you will receive for a given USDC amount
+// Checks how much WETH you will receive for a given USDC amount from SushiSwap
 async function getWethAmount(usdcAmount) {
+  console.log("OK"); //todo: not working
   const amounts = await contract.getAmountsOut(usdcAmount, [
     usdcAddress,
     wethAddress,
   ]);
+  console.log("NOT OK");
   const wethAmount = ethers.utils.formatUnits(amounts[1].toString(), 18);
   return wethAmount;
 }
@@ -80,8 +82,7 @@ async function calculateWethAmount() {
     expectedWethAmount = usdcAmount / currentPrice;
 
     const differencePercentage =
-      ((receivedWethAmount - expectedWethAmount) / expectedWethAmount) * 100 +
-      0.3; // 0.3 is gas fee
+      ((receivedWethAmount - expectedWethAmount) / expectedWethAmount) * 100;
     const priceInUSD = (usdcPriceInUSD.value * usdcAmount) / 1e6;
 
     console.log(
