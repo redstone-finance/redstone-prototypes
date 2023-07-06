@@ -75,7 +75,9 @@ async function calculateWethAmount() {
 
   let receivedWethAmount = 0;
   let expectedWethAmount = 0;
+  let jumps = 0;
   while (receivedWethAmount * 2 >= expectedWethAmount) {
+    jumps++;
     receivedWethAmount = await getWethAmount(usdcAmount);
     expectedWethAmount = usdcAmount / currentPrice;
 
@@ -94,9 +96,11 @@ async function calculateWethAmount() {
         2
       )}%`
     );
-
     usdcAmount *= 2;
   }
+  console.log(
+    `Jumps (the higher, the bigger pool, price harder to manipulate): ${jumps}`
+  );
 }
 
 calculateWethAmount().catch((err) => {
