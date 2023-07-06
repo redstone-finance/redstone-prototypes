@@ -13,9 +13,30 @@ const blockchainExplorerMap = {
   arbitrum: { explorer: "arbiscan.io", apiKey: ARBISCAN_API_KEY },
 };
 
+let firstDay;
+let firstMonth;
+let currentDay;
+let currentMonth;
 function getNumberOfDaysInMonth(month) {
   const [year, monthValue] = month.split("-");
-  return new Date(year, monthValue, 0).getDate();
+  let days = new Date(year, monthValue, 0).getDate();
+  if (month === currentMonth) {
+    days = currentDay;
+  }
+  if (month === firstMonth) {
+    days = days - firstDay + 1;
+  }
+  return days;
+}
+
+// Prepare dates for calculating days in first and last month
+function preapareDates(timestamp) {
+  const date = new Date();
+  currentMonth = `${date.getFullYear()}-${date.getMonth() + 1}`;
+  currentDay = date.getDate();
+  const firstDate = new Date(timestamp * 1000);
+  firstMonth = `${firstDate.getFullYear()}-${firstDate.getMonth() + 1}`;
+  firstDay = firstDate.getDate();
 }
 
 async function cumulativeGasCost(contractName) {
@@ -79,6 +100,8 @@ async function cumulativeGasCost(contractName) {
       transactionsByMonth[month].cumulativeGasCostETH += gasCost;
       transactionsByMonth[month].cumulativeGasCostUSD += gasCost * ethPrices[i];
     }
+
+    preapareDates(transactions[0].timeStamp);
 
     const numberOfTransactions = transactions.length;
     console.log("Total number of transactions:", numberOfTransactions);
