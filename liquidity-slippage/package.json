@@ -1,0 +1,17 @@
+{
+  "name": "liquidity-slippage-calculator",
+  "version": "1.0.0",
+  "description": "Calculates how order size in usd affects pool",
+  "main": "runScripts.js",
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "ethers": "^5.7.2",
+    "glob": "^7.1.7",
+    "redstone-api": "^0.4.11"
+  },
+  "scripts": {
+    "start": "node runScripts.js"
+  },
+  "author": "https://github.com/damiad",
+  "license": "MIT"
+}

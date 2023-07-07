@@ -107,5 +107,5 @@ async function calculateWethAmount() {
 }
 
 calculateWethAmount().catch((err) => {
-  console.error("Error occured:", err);
+  console.error("Error occurred:", err);
 });

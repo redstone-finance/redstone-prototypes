@@ -10,7 +10,7 @@ const provider = new ethers.providers.JsonRpcProvider(
   `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`
 );
 
-const address = "0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f"; // SushiSwap Router02 address
+const address = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"; // Uniswap V2 Router address
 
 const abi = [
   "function getAmountsOut(uint256 amountIn, address[] memory path) public view returns (uint256[] memory amounts)",
@@ -25,9 +25,9 @@ const contract = new ethers.Contract(address, abi, provider);
 const usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"; // USDC address
 const wethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"; // WETH address
 
-// Get the price of WETH in USDC from SushiSwap
+// Get the price of WETH in USDC from Uniswap V2
 async function getWethPriceInUSDC() {
-  const factoryAddress = "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac"; // SushiSwap Factory address
+  const factoryAddress = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"; // Uniswap V2 Factory address
   const factoryAbi = [
     "function getPair(address tokenA, address tokenB) external view returns (address pair)",
   ];
@@ -50,7 +50,7 @@ async function getWethPriceInUSDC() {
   return wethPriceInUSDC;
 }
 
-// Checks how much WETH you will receive for a given USDC amount from SushiSwap
+// Checks how much WETH you will receive for a given USDC amount
 async function getWethAmount(usdcAmount) {
   const amounts = await contract.getAmountsOut(usdcAmount, [
     usdcAddress,
@@ -104,5 +104,5 @@ async function calculateWethAmount() {
 }
 
 calculateWethAmount().catch((err) => {
-  console.error("Error occured:", err);
+  console.error("Error occurred:", err);
 });
