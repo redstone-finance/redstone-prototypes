@@ -1,17 +1,18 @@
 const ethers = require("ethers");
 const dotenv = require("dotenv");
 const redstone = require("redstone-api");
+const constants = require("./constants");
 
 dotenv.config();
-
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
+const usdcAddress = constants.usdcAddress;
+const wethAddress = constants.wethAddress;
+const startPriceUSD = constants.startPriceUSD;
 
 const provider = new ethers.providers.JsonRpcProvider(
   `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`
 );
 
-const usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
-const wethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 const poolAddress = "0x8a649274E4d777FFC6851F13d23A86BBFA2f2Fbf"; // Balancer weth/usdc pool address
 const BPoolABI = [
   "function getSpotPrice(address tokenIn, address tokenOut) external view returns (uint spotPrice)",
@@ -44,6 +45,7 @@ async function prepareData() {
     balancerPool.getDenormalizedWeight(wethAddress),
     balancerPool.getSpotPrice(usdcAddress, wethAddress),
   ]);
+  wethPriceInUSDC = ethers.utils.formatUnits(wethPriceInUSDC.toString(), 6);
 }
 
 // Checks how much WETH you will receive for a given USDC amount from Balancer
@@ -53,7 +55,7 @@ async function getWethAmount(usdcAmount) {
     tokenWeightIn,
     tokenBalanceOut,
     tokenWeightOut,
-    usdcAmount,
+    ethers.utils.parseUnits(usdcAmount.toString(), 6),
     swapFee
   );
 
@@ -63,16 +65,11 @@ async function getWethAmount(usdcAmount) {
 
 async function calculateWethAmount() {
   await prepareData();
-  console.log(
-    `Price WETH in USDC: ${ethers.utils.formatUnits(
-      wethPriceInUSDC.toString(),
-      6
-    )}`
-  );
+  console.log(`Price WETH in USDC: ${wethPriceInUSDC}`);
 
-  let usdcAmount = wethPriceInUSDC;
-  let currentPrice = wethPriceInUSDC;
   const usdcPriceInUSD = await redstone.getPrice("USDC");
+  let usdcAmount = Number(startPriceUSD / usdcPriceInUSD.value).toFixed(6);
+  let currentPrice = wethPriceInUSDC;
   const transactionFee = ethers.utils.formatUnits(swapFee.toString(), 18);
 
   let receivedWethAmount = 0;
@@ -86,18 +83,11 @@ async function calculateWethAmount() {
     const differencePercentage = parseFloat(
       ((receivedWethAmount - expectedWethAmount) / expectedWethAmount) * 100 +
         transactionFee
-    );
-    const priceInUSD = (usdcPriceInUSD.value * usdcAmount) / 1e6;
+    ).toFixed(2);
+    const priceInUSD = (usdcPriceInUSD.value * usdcAmount).toFixed(2);
 
     console.log(
-      `For ${ethers.utils.formatUnits(
-        usdcAmount.toString(),
-        6
-      )} USDC (${priceInUSD.toFixed(
-        2
-      )} USD), received WETH: ${receivedWethAmount}, expected WETH: ${expectedWethAmount}, difference: ${differencePercentage.toFixed(
-        2
-      )}%`
+      `For ${usdcAmount} USDC (${priceInUSD} USD), received WETH: ${receivedWethAmount}, expected WETH: ${expectedWethAmount}, difference: ${differencePercentage}%`
     );
     usdcAmount *= 2;
   }

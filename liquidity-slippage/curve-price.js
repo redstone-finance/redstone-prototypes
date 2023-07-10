@@ -1,8 +1,10 @@
 const ethers = require("ethers");
 const dotenv = require("dotenv");
 const redstone = require("redstone-api");
+const constants = require("./constants");
 
 dotenv.config();
+const startPriceUSD = constants.startPriceUSD;
 
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
@@ -45,9 +47,9 @@ async function calculateDaiAmount() {
   const daiPriceInUSDC = await getDAIPriceInUSDC();
   console.log("Price DAI in USDC:", daiPriceInUSDC);
 
-  let usdcAmount = daiPriceInUSDC;
-  let currentPrice = daiPriceInUSDC;
   const usdcPriceInUSD = await redstone.getPrice("USDC");
+  let usdcAmount = Number(startPriceUSD / usdcPriceInUSD.value).toFixed(6);
+  let currentPrice = daiPriceInUSDC;
 
   let receivedDaiAmount = 0;
   let expectedDaiAmount = 0;

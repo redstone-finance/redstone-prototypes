@@ -1,16 +1,18 @@
 const ethers = require("ethers");
 const dotenv = require("dotenv");
 const redstone = require("redstone-api");
+const constants = require("./constants");
 
 dotenv.config();
-
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
+const usdcAddress = constants.usdcAddress;
+const wethAddress = constants.wethAddress;
+const startPriceUSD = constants.startPriceUSD;
 
 const provider = new ethers.providers.JsonRpcProvider(
   `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`
 );
 
-// const address = "0xE592427A0AEce92De3Edee1F18E0157C05861564"; // Uniswap V3 Router address
 const address = "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6"; // Uniswap V3 Quoter address
 
 const abi = [
@@ -22,9 +24,6 @@ const poolAbi = [
 ];
 
 const contract = new ethers.Contract(address, abi, provider);
-
-const usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"; // USDC address
-const wethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"; // WETH address
 
 // Get the price of WETH in USDC from Uniswap V3
 async function getWethPriceInUSDC() {
@@ -74,9 +73,11 @@ async function getWethAmount(usdcAmount) {
 async function calculateWethAmount() {
   const wethPriceInUSDC = await getWethPriceInUSDC();
   console.log(`Price WETH in USDC: ${wethPriceInUSDC}`);
-  let usdcAmount = wethPriceInUSDC;
-  let currentPrice = wethPriceInUSDC;
+
   const usdcPriceInUSD = await redstone.getPrice("USDC");
+  let usdcAmount = Number(startPriceUSD / usdcPriceInUSD.value).toFixed(6);
+  let currentPrice = wethPriceInUSDC;
+
   let receivedWethAmount = 0;
   let expectedWethAmount = 0;
   let jumps = 0;
@@ -84,16 +85,15 @@ async function calculateWethAmount() {
     jumps++;
     receivedWethAmount = await getWethAmount(usdcAmount);
     expectedWethAmount = usdcAmount / currentPrice;
-    const differencePercentage =
+
+    const differencePercentage = (
       ((receivedWethAmount - expectedWethAmount) / expectedWethAmount) * 100 +
-      0.3; // 0.3 is gas fee
-    const priceInUSD = usdcPriceInUSD.value * usdcAmount;
+      0.3
+    ).toFixed(2); // 0.3 is gas fee
+    const priceInUSD = (usdcPriceInUSD.value * usdcAmount).toFixed(2);
+
     console.log(
-      `For ${usdcAmount} USDC (${priceInUSD.toFixed(
-        2
-      )} USD), received WETH: ${receivedWethAmount}, expected WETH: ${expectedWethAmount}, difference: ${differencePercentage.toFixed(
-        2
-      )}%`
+      `For ${usdcAmount} USDC (${priceInUSD} USD), received WETH: ${receivedWethAmount}, expected WETH: ${expectedWethAmount}, difference: ${differencePercentage}%`
     );
     usdcAmount *= 2;
   }
