@@ -8,7 +8,7 @@ glob("*.js", {}, (err, files) => {
   }
 
   files.forEach((file) => {
-    if (file !== "runScripts.js") {
+    if (file !== "runScripts.js" && file !== "constants.js") {
       console.log(`Running script: ${file}`);
       try {
         execSync(`node ${file}`, { stdio: "inherit" });

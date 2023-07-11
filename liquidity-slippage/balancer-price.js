@@ -5,14 +5,17 @@ const constants = require("./constants");
 
 dotenv.config();
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
-const usdcAddress = constants.usdcAddress;
-const wethAddress = constants.wethAddress;
 const startPriceUSD = constants.startPriceUSD;
+cryptoASymbol = "USDC";
+cryptoBSymbol = "WETH";
+
+const cryptoA = constants[cryptoASymbol];
+const cryptoB = constants[cryptoBSymbol];
 
 const provider = new ethers.providers.JsonRpcProvider(
   `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`
 );
-
+// TODO: Need to manually change pool address...
 const poolAddress = "0x8a649274E4d777FFC6851F13d23A86BBFA2f2Fbf"; // Balancer weth/usdc pool address
 const BPoolABI = [
   "function getSpotPrice(address tokenIn, address tokenOut) external view returns (uint spotPrice)",
@@ -27,75 +30,83 @@ let tokenBalanceIn,
   tokenBalanceOut,
   tokenWeightOut,
   swapFee,
-  wethPriceInUSDC;
+  secondPriceInFirst;
 
-async function prepareData() {
+async function prepareData(fromCrypto, toCrypto) {
   [
     swapFee,
     tokenBalanceIn,
     tokenWeightIn,
     tokenBalanceOut,
     tokenWeightOut,
-    wethPriceInUSDC,
+    secondPriceInFirst,
   ] = await Promise.all([
     balancerPool.getSwapFee(),
-    balancerPool.getBalance(usdcAddress),
-    balancerPool.getDenormalizedWeight(usdcAddress),
-    balancerPool.getBalance(wethAddress),
-    balancerPool.getDenormalizedWeight(wethAddress),
-    balancerPool.getSpotPrice(usdcAddress, wethAddress),
+    balancerPool.getBalance(fromCrypto.address),
+    balancerPool.getDenormalizedWeight(fromCrypto.address),
+    balancerPool.getBalance(toCrypto.address),
+    balancerPool.getDenormalizedWeight(toCrypto.address),
+    balancerPool.getSpotPrice(fromCrypto.address, toCrypto.address),
   ]);
-  wethPriceInUSDC = ethers.utils.formatUnits(wethPriceInUSDC.toString(), 6);
+  secondPriceInFirst = ethers.utils.formatUnits(
+    secondPriceInFirst.toString(),
+    fromCrypto.decimals
+  );
 }
 
-// Checks how much WETH you will receive for a given USDC amount from Balancer
-async function getWethAmount(usdcAmount) {
-  const wethAmount = await balancerPool.calcOutGivenIn(
+async function getOutAmount(fromAmount, fromCrypto, toCrypto) {
+  const outAmount = await balancerPool.calcOutGivenIn(
     tokenBalanceIn,
     tokenWeightIn,
     tokenBalanceOut,
     tokenWeightOut,
-    ethers.utils.parseUnits(usdcAmount.toString(), 6),
+    ethers.utils.parseUnits(fromAmount.toString(), fromCrypto.decimals),
     swapFee
   );
-
-  const shiftedWethAmount = ethers.utils.formatUnits(wethAmount.toString(), 18);
-  return shiftedWethAmount;
+  return ethers.utils.formatUnits(outAmount.toString(), toCrypto.decimals);
 }
 
-async function calculateWethAmount() {
-  await prepareData();
-  console.log(`Price WETH in USDC: ${wethPriceInUSDC}`);
+async function calculateSlippage(fromCrypto, toCrypto) {
+  await prepareData(fromCrypto, toCrypto);
+  console.log(
+    `Price ${toCrypto.symbol} in ${fromCrypto.symbol}: ${secondPriceInFirst}`
+  );
+  const firstPriceInUSD = await redstone.getPrice(fromCrypto.symbol);
+  let fromAmount = Number(startPriceUSD / firstPriceInUSD.value).toFixed(
+    fromCrypto.decimals
+  );
 
-  const usdcPriceInUSD = await redstone.getPrice("USDC");
-  let usdcAmount = Number(startPriceUSD / usdcPriceInUSD.value).toFixed(6);
-  let currentPrice = wethPriceInUSDC;
+  let currentPrice = secondPriceInFirst;
   const transactionFee = ethers.utils.formatUnits(swapFee.toString(), 18);
-
-  let receivedWethAmount = 0;
-  let expectedWethAmount = 0;
+  let receivedSecondAmount = 0;
+  let expectedSecondAmount = 0;
   let jumps = 0;
-  while (receivedWethAmount * 2 >= expectedWethAmount) {
+  while (receivedSecondAmount * 2 >= expectedSecondAmount) {
     jumps++;
-    receivedWethAmount = await getWethAmount(usdcAmount);
-    expectedWethAmount = usdcAmount / currentPrice;
-
+    receivedSecondAmount = await getOutAmount(fromAmount, fromCrypto, toCrypto);
+    expectedSecondAmount = fromAmount / currentPrice;
     const differencePercentage = parseFloat(
-      ((receivedWethAmount - expectedWethAmount) / expectedWethAmount) * 100 +
+      ((receivedSecondAmount - expectedSecondAmount) / expectedSecondAmount) *
+        100 +
         transactionFee
     ).toFixed(2);
-    const priceInUSD = (usdcPriceInUSD.value * usdcAmount).toFixed(2);
-
+    const priceInUSD = (firstPriceInUSD.value * fromAmount).toFixed(2);
     console.log(
-      `For ${usdcAmount} USDC (${priceInUSD} USD), received WETH: ${receivedWethAmount}, expected WETH: ${expectedWethAmount}, difference: ${differencePercentage}%`
+      `For ${fromAmount} ${fromCrypto.symbol} (${priceInUSD} USD), received ${toCrypto.symbol}: ${receivedSecondAmount}, expected ${toCrypto.symbol}: ${expectedSecondAmount}, difference: ${differencePercentage}%`
     );
-    usdcAmount *= 2;
+    fromAmount *= 2;
   }
   console.log(
     `Jumps (the higher, the bigger pool, price harder to manipulate): ${jumps}`
   );
 }
 
-calculateWethAmount().catch((err) => {
+async function findSlippage() {
+  await calculateSlippage(cryptoA, cryptoB);
+  // TODO: NOT WORKING wrong decimals in getSpotPrice ?
+  // await calculateSlippage(cryptoB, cryptoA);
+}
+
+findSlippage().catch((err) => {
   console.error("Error occurred:", err);
 });

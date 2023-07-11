@@ -4,15 +4,21 @@ const redstone = require("redstone-api");
 const constants = require("./constants");
 
 dotenv.config();
+const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 const startPriceUSD = constants.startPriceUSD;
 
-const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
+cryptoASymbol = "USDC";
+cryptoBSymbol = "DAI";
+const cryptoA = constants[cryptoASymbol];
+const cryptoB = constants[cryptoBSymbol];
 
 const provider = new ethers.providers.JsonRpcProvider(
   `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`
 );
 
 const address = "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7"; // DAI, USDC
+let fromIndex = 1; // USDC
+let toIndex = 0; // DAI
 
 const abi = [
   "function get_dy(int128 i, int128 j, uint256 dx) external view returns (uint256)",
@@ -21,62 +27,73 @@ const abi = [
 
 const contract = new ethers.Contract(address, abi, provider);
 
-// Get the price of DAI in USDC from Curve
-async function getDAIPriceInUSDC() {
-  const usdcToDai = await contract.get_dy(
-    1,
-    0,
-    ethers.utils.parseUnits("1", 6)
+async function getSecondCryptoPriceInFirstCrypto(fromCrypto, toCrypto) {
+  const secondPriceInFirst = await contract.get_dy(
+    fromIndex,
+    toIndex,
+    ethers.utils.parseUnits("1", fromCrypto.decimals)
   );
-  const formattedPrice = ethers.utils.formatUnits(usdcToDai.toString(), 18);
-  const trimmedPrice = Number(formattedPrice).toFixed(6);
-  return trimmedPrice;
+  const formattedPrice = ethers.utils.formatUnits(
+    secondPriceInFirst.toString(),
+    toCrypto.decimals
+  );
+  return Number(formattedPrice).toFixed(fromCrypto.decimals);
 }
 
-// Checks how much DAI you will receive for a given USDC amount
-async function getDaiAmount(usdcAmount) {
-  const daiAmount = await contract.get_dy(
-    1,
-    0,
-    ethers.utils.parseUnits(usdcAmount.toString(), 6)
+async function getOutAmount(fromAmount, fromCrypto, toCrypto) {
+  const outAmount = await contract.get_dy(
+    fromIndex,
+    toIndex,
+    ethers.utils.parseUnits(fromAmount.toString(), fromCrypto.decimals)
   );
-  return Number(ethers.utils.formatUnits(daiAmount.toString(), 18)).toFixed(6);
+  return ethers.utils.formatUnits(outAmount.toString(), toCrypto.decimals);
 }
 
-async function calculateDaiAmount() {
-  const daiPriceInUSDC = await getDAIPriceInUSDC();
-  console.log("Price DAI in USDC:", daiPriceInUSDC);
+async function calculateSlippage(fromCrypto, toCrypto) {
+  const secondPriceInFirst = await getSecondCryptoPriceInFirstCrypto(
+    fromCrypto,
+    toCrypto
+  );
+  console.log(
+    `Price ${toCrypto.symbol} in ${fromCrypto.symbol}: ${secondPriceInFirst}`
+  );
 
-  const usdcPriceInUSD = await redstone.getPrice("USDC");
-  let usdcAmount = Number(startPriceUSD / usdcPriceInUSD.value).toFixed(6);
-  let currentPrice = daiPriceInUSDC;
-
-  let receivedDaiAmount = 0;
-  let expectedDaiAmount = 0;
+  const firstPriceInUSD = await redstone.getPrice(fromCrypto.symbol);
+  let fromAmount = Number(startPriceUSD / firstPriceInUSD.value).toFixed(
+    fromCrypto.decimals
+  );
+  let currentPrice = secondPriceInFirst;
+  let receivedSecondAmount = 0;
+  let expectedSecondAmount = 0;
   let jumps = 0;
-  while (receivedDaiAmount * 2 >= expectedDaiAmount) {
+  while (receivedSecondAmount * 2 >= expectedSecondAmount) {
     jumps++;
-    receivedDaiAmount = await getDaiAmount(usdcAmount);
-    expectedDaiAmount = usdcAmount / currentPrice;
+    receivedSecondAmount = await getOutAmount(fromAmount, fromCrypto, toCrypto);
+    expectedSecondAmount = fromAmount / currentPrice;
 
-    const differencePercentage =
-      ((receivedDaiAmount - expectedDaiAmount) / expectedDaiAmount) * 100;
-    const priceInUSD = usdcPriceInUSD.value * usdcAmount;
-
+    const differencePercentage = (
+      ((receivedSecondAmount - expectedSecondAmount) / expectedSecondAmount) *
+        100 +
+      0.2
+    ).toFixed(2);
+    const priceInUSD = (firstPriceInUSD.value * fromAmount).toFixed(2);
     console.log(
-      `For ${usdcAmount} USDC (${priceInUSD.toFixed(
-        2
-      )} USD), received DAI: ${receivedDaiAmount}, expected DAI: ${expectedDaiAmount}, difference: ${differencePercentage.toFixed(
-        2
-      )}%`
+      `For ${fromAmount} ${fromCrypto.symbol} (${priceInUSD} USD), received ${toCrypto.symbol}: ${receivedSecondAmount}, expected ${toCrypto.symbol}: ${expectedSecondAmount}, difference: ${differencePercentage}%`
     );
-    usdcAmount *= 2;
+    fromAmount *= 2;
   }
   console.log(
     `Jumps (the higher, the bigger pool, price harder to manipulate): ${jumps}`
   );
 }
 
-calculateDaiAmount().catch((err) => {
+async function findSlippage() {
+  await calculateSlippage(cryptoA, cryptoB);
+  fromIndex = 0;
+  toIndex = 1;
+  await calculateSlippage(cryptoB, cryptoA);
+}
+
+findSlippage().catch((err) => {
   console.error("Error occurred:", err);
 });
