@@ -11,10 +11,10 @@ const constants = {
   },
   DAI: {
     symbol: "DAI",
-    address: "0x6B175474E89094C44Da98b954EedeAC495271d0F", 
+    address: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
     decimals: 18,
   },
-  startPriceUSD: 1024,
+  startPriceUSD: 1e7,
 };
 
 module.exports = constants;

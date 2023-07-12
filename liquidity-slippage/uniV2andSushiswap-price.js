@@ -2,6 +2,11 @@ const ethers = require("ethers");
 const dotenv = require("dotenv");
 const redstone = require("redstone-api");
 const constants = require("./constants");
+const {
+  calculatePoolSize,
+  calcPriceSecondInFirst,
+  getApproximateTokensAmountInPool,
+} = require("./common");
 
 dotenv.config();
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
@@ -41,15 +46,22 @@ async function getSecondCryptoPriceInFirstCrypto(fromCrypto, toCrypto) {
   const token0 = await pairContract.token0();
   let reserves0 = reserves[0];
   let reserves1 = reserves[1];
+
   if (toCrypto.address.toLowerCase() === token0.toLowerCase())
     [reserves0, reserves1] = [reserves1, reserves0];
+  await calculatePoolSize(
+    ethers.utils.formatUnits(reserves0, fromCrypto.decimals),
+    ethers.utils.formatUnits(reserves1, toCrypto.decimals),
+    fromCrypto.symbol,
+    toCrypto.symbol
+  );
+  // await getApproximateTokensAmountInPool(pairAddress, fromCrypto, toCrypto);
 
-  const secondPriceInFirst = reserves0
-    .mul(ethers.utils.parseUnits("1", toCrypto.decimals))
-    .div(reserves1);
-  return ethers.utils.formatUnits(
-    secondPriceInFirst.toString(),
-    fromCrypto.decimals
+  return await calcPriceSecondInFirst(
+    reserves0,
+    reserves1,
+    fromCrypto.decimals,
+    toCrypto.decimals
   );
 }
 
@@ -75,27 +87,20 @@ async function calculateSlippage(fromCrypto, toCrypto) {
     fromCrypto.decimals
   );
   let currentPrice = secondPriceInFirst;
-  let receivedSecondAmount = 0;
-  let expectedSecondAmount = 0;
-  let jumps = 0;
-  while (receivedSecondAmount * 2 >= expectedSecondAmount) {
-    jumps++;
-    receivedSecondAmount = await getOutAmount(fromAmount, fromCrypto, toCrypto);
-    expectedSecondAmount = fromAmount / currentPrice;
-
-    const differencePercentage = (
-      ((receivedSecondAmount - expectedSecondAmount) / expectedSecondAmount) *
-        100 +
-      0.3
-    ).toFixed(2); // 0.3 is gas fee
-    const priceInUSD = (firstPriceInUSD.value * fromAmount).toFixed(2);
-    console.log(
-      `For ${fromAmount} ${fromCrypto.symbol} (${priceInUSD} USD), received ${toCrypto.symbol}: ${receivedSecondAmount}, expected ${toCrypto.symbol}: ${expectedSecondAmount}, difference: ${differencePercentage}%`
-    );
-    fromAmount *= 2;
-  }
+  const receivedSecondAmount = await getOutAmount(
+    fromAmount,
+    fromCrypto,
+    toCrypto
+  );
+  const expectedSecondAmount = fromAmount / currentPrice;
+  const differencePercentage = (
+    ((receivedSecondAmount - expectedSecondAmount) / expectedSecondAmount) *
+      100 +
+    0.3
+  ).toFixed(2); // 0.3 is gas fee
+  const priceInUSD = (firstPriceInUSD.value * fromAmount).toFixed(2);
   console.log(
-    `Jumps (the higher, the bigger pool, price harder to manipulate): ${jumps}`
+    `For ${fromAmount} ${fromCrypto.symbol} (${priceInUSD} USD), received ${toCrypto.symbol}: ${receivedSecondAmount}, expected ${toCrypto.symbol}: ${expectedSecondAmount}, difference: ${differencePercentage}%`
   );
 }
 
