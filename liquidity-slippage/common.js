@@ -68,8 +68,44 @@ async function getApproximateTokensAmountInPool(
   );
 }
 
+async function calculatePriceDifference(
+  pricesUSD,
+  firstPriceInUSD,
+  secondPriceInFirst,
+  gasFee,
+  fromCrypto,
+  toCrypto,
+  getOutAmount,
+  contract
+) {
+  const resultPromises = pricesUSD.map(async (price) => {
+    const fromAmount = Number(price / firstPriceInUSD.value).toFixed(
+      fromCrypto.decimals
+    );
+    const currentPrice = secondPriceInFirst;
+    const receivedSecondAmount = await getOutAmount(
+      fromAmount,
+      fromCrypto,
+      toCrypto,
+      contract
+    );
+    const expectedSecondAmount = fromAmount / currentPrice;
+    const differencePercentage = parseFloat(
+      ((receivedSecondAmount - expectedSecondAmount) / expectedSecondAmount) *
+        100 +
+      gasFee
+    ).toFixed(2);
+    const priceInUSD = (firstPriceInUSD.value * fromAmount).toFixed(2);
+    return `For ${fromAmount} ${fromCrypto.symbol} (${priceInUSD} USD), received ${toCrypto.symbol}: ${receivedSecondAmount}, expected ${toCrypto.symbol}: ${expectedSecondAmount}, difference: ${differencePercentage}%`;
+  });
+
+  const results = await Promise.all(resultPromises);
+  return results;
+}
+
 module.exports = {
   calculatePoolSize,
   calcPriceSecondInFirst,
   getApproximateTokensAmountInPool,
+  calculatePriceDifference,
 };

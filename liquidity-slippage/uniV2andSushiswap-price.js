@@ -6,12 +6,13 @@ const {
   calculatePoolSize,
   calcPriceSecondInFirst,
   getApproximateTokensAmountInPool,
+  calculatePriceDifference,
 } = require("./common");
 
 dotenv.config();
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
-const startPriceUSD = constants.startPriceUSD;
-cryptoASymbol = "USDC";
+const pricesUSD = constants.pricesUSD;
+cryptoASymbol = "OHM";
 cryptoBSymbol = "WETH";
 
 const cryptoA = constants[cryptoASymbol];
@@ -65,7 +66,7 @@ async function getSecondCryptoPriceInFirstCrypto(fromCrypto, toCrypto) {
   );
 }
 
-async function getOutAmount(fromAmount, fromCrypto, toCrypto) {
+async function getOutAmount(fromAmount, fromCrypto, toCrypto, contract) {
   const amounts = await contract.getAmountsOut(
     ethers.utils.parseUnits(fromAmount.toString(), fromCrypto.decimals),
     [fromCrypto.address, toCrypto.address]
@@ -83,25 +84,18 @@ async function calculateSlippage(fromCrypto, toCrypto) {
   );
 
   const firstPriceInUSD = await redstone.getPrice(fromCrypto.symbol);
-  let fromAmount = Number(startPriceUSD / firstPriceInUSD.value).toFixed(
-    fromCrypto.decimals
-  );
-  let currentPrice = secondPriceInFirst;
-  const receivedSecondAmount = await getOutAmount(
-    fromAmount,
+  const gasFee = 0.3;
+  const results = await calculatePriceDifference(
+    pricesUSD,
+    firstPriceInUSD,
+    secondPriceInFirst,
+    gasFee,
     fromCrypto,
-    toCrypto
+    toCrypto,
+    getOutAmount,
+    contract
   );
-  const expectedSecondAmount = fromAmount / currentPrice;
-  const differencePercentage = (
-    ((receivedSecondAmount - expectedSecondAmount) / expectedSecondAmount) *
-      100 +
-    0.3
-  ).toFixed(2); // 0.3 is gas fee
-  const priceInUSD = (firstPriceInUSD.value * fromAmount).toFixed(2);
-  console.log(
-    `For ${fromAmount} ${fromCrypto.symbol} (${priceInUSD} USD), received ${toCrypto.symbol}: ${receivedSecondAmount}, expected ${toCrypto.symbol}: ${expectedSecondAmount}, difference: ${differencePercentage}%`
-  );
+  results.forEach((result) => console.log(result));
 }
 
 async function findSlippage() {

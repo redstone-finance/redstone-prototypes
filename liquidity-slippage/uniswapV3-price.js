@@ -6,14 +6,15 @@ const {
   calcPriceSecondInFirst,
   calculatePoolSize,
   getApproximateTokensAmountInPool,
+  calculatePriceDifference,
 } = require("./common");
 
 dotenv.config();
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
-const startPriceUSD = constants.startPriceUSD;
+const pricesUSD = constants.pricesUSD;
 
-cryptoASymbol = "USDC";
-cryptoBSymbol = "WETH";
+cryptoASymbol = "WETH";
+cryptoBSymbol = "DAI";
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];
 
@@ -62,7 +63,7 @@ async function getSecondCryptoPriceInFirstCrypto(fromCrypto, toCrypto) {
   return buyOneOfToken1;
 }
 
-async function getOutAmount(fromAmount, fromCrypto, toCrypto) {
+async function getOutAmount(fromAmount, fromCrypto, toCrypto, contract) {
   const amountIn = ethers.utils.parseUnits(
     fromAmount.toString(),
     fromCrypto.decimals
@@ -77,6 +78,41 @@ async function getOutAmount(fromAmount, fromCrypto, toCrypto) {
   return ethers.utils.formatUnits(amountOut.toString(), toCrypto.decimals);
 }
 
+// async function calculatePriceDifference(
+//   pricesUSD,
+//   firstPriceInUSD,
+//   secondPriceInFirst,
+//   fromCrypto,
+//   toCrypto
+// ) {
+//   const resultPromises = pricesUSD.map(async (price) => {
+//     const fromAmount = Number(price / firstPriceInUSD.value).toFixed(
+//       fromCrypto.decimals
+//     );
+//     const currentPrice = secondPriceInFirst;
+
+//     const receivedSecondAmount = await getOutAmount(
+//       fromAmount,
+//       fromCrypto,
+//       toCrypto
+//     );
+//     const expectedSecondAmount = fromAmount / currentPrice;
+
+//     const differencePercentage = (
+//       ((receivedSecondAmount - expectedSecondAmount) / expectedSecondAmount) *
+//         100 +
+//       0.3
+//     ).toFixed(2); // 0.3 is gas fee
+
+//     const priceInUSD = (firstPriceInUSD.value * fromAmount).toFixed(2);
+
+//     return `For ${fromAmount} ${fromCrypto.symbol} (${priceInUSD} USD), received ${toCrypto.symbol}: ${receivedSecondAmount}, expected ${toCrypto.symbol}: ${expectedSecondAmount}, difference: ${differencePercentage}%`;
+//   });
+
+//   const results = await Promise.all(resultPromises);
+//   return results;
+// }
+
 async function calculateSlippage(fromCrypto, toCrypto) {
   const secondPriceInFirst = await getSecondCryptoPriceInFirstCrypto(
     fromCrypto,
@@ -86,25 +122,18 @@ async function calculateSlippage(fromCrypto, toCrypto) {
     `Price ${toCrypto.symbol} in ${fromCrypto.symbol}: ${secondPriceInFirst}`
   );
   const firstPriceInUSD = await redstone.getPrice(fromCrypto.symbol);
-  let fromAmount = Number(startPriceUSD / firstPriceInUSD.value).toFixed(
-    fromCrypto.decimals
-  );
-  let currentPrice = secondPriceInFirst;
-  const receivedSecondAmount = await getOutAmount(
-    fromAmount,
+  const gasFee = 0.3;
+  const results = await calculatePriceDifference(
+    pricesUSD,
+    firstPriceInUSD,
+    secondPriceInFirst,
+    gasFee,
     fromCrypto,
-    toCrypto
+    toCrypto,
+    getOutAmount,
+    contract
   );
-  const expectedSecondAmount = fromAmount / currentPrice;
-  const differencePercentage = (
-    ((receivedSecondAmount - expectedSecondAmount) / expectedSecondAmount) *
-      100 +
-    0.3
-  ).toFixed(2); // 0.3 is gas fee
-  const priceInUSD = (firstPriceInUSD.value * fromAmount).toFixed(2);
-  console.log(
-    `For ${fromAmount} ${fromCrypto.symbol} (${priceInUSD} USD), received ${toCrypto.symbol}: ${receivedSecondAmount}, expected ${toCrypto.symbol}: ${expectedSecondAmount}, difference: ${differencePercentage}%`
-  );
+  results.forEach((result) => console.log(result));
 }
 
 async function findSlippage() {

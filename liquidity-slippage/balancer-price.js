@@ -6,15 +6,19 @@ const {
   calculatePoolSize,
   calcPriceSecondInFirst,
   getApproximateTokensAmountInPool,
+  calculatePriceDifference,
 } = require("./common");
 
 dotenv.config();
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
-const startPriceUSD = constants.startPriceUSD;
+const pricesUSD = constants.pricesUSD;
 cryptoASymbol = "USDC";
 cryptoBSymbol = "WETH";
+
 // TODO: Need to manually change pool address...
 const poolAddress = "0x8a649274E4d777FFC6851F13d23A86BBFA2f2Fbf"; // Balancer weth/usdc pool address
+// const poolAddress = "0x165a50Bc092f6870DC111C349baE5Fc35147ac86";
+// const poolAddress = "0x5c6Ee304399DBdB9C8Ef030aB642B10820DB8F56"; // Balancer ohm/weth pool address
 
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];
@@ -62,8 +66,9 @@ async function prepareData(fromCrypto, toCrypto) {
   // await getApproximateTokensAmountInPool(poolAddress, fromCrypto, toCrypto);
 }
 
-async function getOutAmount(fromAmount, fromCrypto, toCrypto) {
-  const outAmount = await balancerPool.calcOutGivenIn(
+async function getOutAmount(fromAmount, fromCrypto, toCrypto, contract) {
+  // contract = balancerPool;
+  const outAmount = await contract.calcOutGivenIn(
     tokenBalanceIn,
     tokenWeightIn,
     tokenBalanceOut,
@@ -79,28 +84,19 @@ async function calculateSlippage(fromCrypto, toCrypto) {
   console.log(
     `Price ${toCrypto.symbol} in ${fromCrypto.symbol}: ${secondPriceInFirst}`
   );
+  const gasFee = ethers.utils.formatUnits(swapFee.toString(), 18);
   const firstPriceInUSD = await redstone.getPrice(fromCrypto.symbol);
-  let fromAmount = Number(startPriceUSD / firstPriceInUSD.value).toFixed(
-    fromCrypto.decimals
-  );
-
-  let currentPrice = secondPriceInFirst;
-  const transactionFee = ethers.utils.formatUnits(swapFee.toString(), 18);
-  const receivedSecondAmount = await getOutAmount(
-    fromAmount,
+  const results = await calculatePriceDifference(
+    pricesUSD,
+    firstPriceInUSD,
+    secondPriceInFirst,
+    gasFee,
     fromCrypto,
-    toCrypto
+    toCrypto,
+    getOutAmount,
+    balancerPool
   );
-  const expectedSecondAmount = fromAmount / currentPrice;
-  const differencePercentage = parseFloat(
-    ((receivedSecondAmount - expectedSecondAmount) / expectedSecondAmount) *
-      100 +
-      transactionFee
-  ).toFixed(2);
-  const priceInUSD = (firstPriceInUSD.value * fromAmount).toFixed(2);
-  console.log(
-    `For ${fromAmount} ${fromCrypto.symbol} (${priceInUSD} USD), received ${toCrypto.symbol}: ${receivedSecondAmount}, expected ${toCrypto.symbol}: ${expectedSecondAmount}, difference: ${differencePercentage}%`
-  );
+  results.forEach((result) => console.log(result));
 }
 
 async function findSlippage() {
