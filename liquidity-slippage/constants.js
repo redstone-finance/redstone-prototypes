@@ -34,6 +34,26 @@ const constants = {
     address: "0xE60779CC1b2c1d0580611c526a8DF0E3f870EC48",
     decimals: 18,
   },
+  ADA: {
+    symbol: "ADA",
+    address: "0xc14777C94229582E5758C5a79b83DDE876b9BE98",
+    decimals: 18,
+  },
+  UNI: {
+    symbol: "UNI",
+    address: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+    decimals: 18,
+  },
+  ELON: {
+    symbol: "ELON",
+    address: "0x761D38e5ddf6ccf6Cf7c55759d5210750B5D60F3",
+    decimals: 18,
+  },
+  DIA: {
+    symbol: "DIA",
+    address: "0x84cA8bc7997272c7CfB4D0Cd3D55cd942B3c9419",
+    decimals: 18,
+  },
   pricesUSD: [1e5, 1e7],
 };
 

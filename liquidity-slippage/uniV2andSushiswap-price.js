@@ -12,7 +12,7 @@ const {
 dotenv.config();
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 const pricesUSD = constants.pricesUSD;
-cryptoASymbol = "OHM";
+cryptoASymbol = "DAI";
 cryptoBSymbol = "WETH";
 
 const cryptoA = constants[cryptoASymbol];

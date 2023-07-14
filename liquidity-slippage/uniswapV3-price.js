@@ -78,41 +78,6 @@ async function getOutAmount(fromAmount, fromCrypto, toCrypto, contract) {
   return ethers.utils.formatUnits(amountOut.toString(), toCrypto.decimals);
 }
 
-// async function calculatePriceDifference(
-//   pricesUSD,
-//   firstPriceInUSD,
-//   secondPriceInFirst,
-//   fromCrypto,
-//   toCrypto
-// ) {
-//   const resultPromises = pricesUSD.map(async (price) => {
-//     const fromAmount = Number(price / firstPriceInUSD.value).toFixed(
-//       fromCrypto.decimals
-//     );
-//     const currentPrice = secondPriceInFirst;
-
-//     const receivedSecondAmount = await getOutAmount(
-//       fromAmount,
-//       fromCrypto,
-//       toCrypto
-//     );
-//     const expectedSecondAmount = fromAmount / currentPrice;
-
-//     const differencePercentage = (
-//       ((receivedSecondAmount - expectedSecondAmount) / expectedSecondAmount) *
-//         100 +
-//       0.3
-//     ).toFixed(2); // 0.3 is gas fee
-
-//     const priceInUSD = (firstPriceInUSD.value * fromAmount).toFixed(2);
-
-//     return `For ${fromAmount} ${fromCrypto.symbol} (${priceInUSD} USD), received ${toCrypto.symbol}: ${receivedSecondAmount}, expected ${toCrypto.symbol}: ${expectedSecondAmount}, difference: ${differencePercentage}%`;
-//   });
-
-//   const results = await Promise.all(resultPromises);
-//   return results;
-// }
-
 async function calculateSlippage(fromCrypto, toCrypto) {
   const secondPriceInFirst = await getSecondCryptoPriceInFirstCrypto(
     fromCrypto,
