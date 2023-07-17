@@ -13,8 +13,8 @@ dotenv.config();
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 const pricesUSD = constants.pricesUSD;
 
-cryptoASymbol = "DAI";
-cryptoBSymbol = "USDC";
+cryptoASymbol = "HBTC";
+cryptoBSymbol = "WBTC";
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];
 
@@ -23,8 +23,11 @@ const provider = new ethers.providers.JsonRpcProvider(
 );
 
 // TODO: Need to manually change pool address...
-const address = "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7"; // DAI, USDC, USDT
-// const address = "0x3660BD168494d61ffDac21E403d0F6356cF90fD7";
+// const address = "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7"; // DAI, USDC, USDT
+const address = "0x4CA9b3063Ec5866A4B82E437059D2C43d1be596F"; // HBTC, WBTC
+// const address = "0xc5424B857f758E906013F3555Dad202e4bdB4567"; // ETH, sETH
+// const address = "0xD51a44d3FaE010294C616388b506AcdA1bfAAE46"; // WBTC, WETH, USDT
+
 let fromIndex = -1;
 let toIndex = -1;
 
@@ -102,7 +105,7 @@ async function findSlippage() {
     const coinAddress = await contract.coins(i);
     if (coinAddress === cryptoA.address) fromIndex = i;
     if (coinAddress === cryptoB.address) toIndex = i;
-    if (i++ > 1) {
+    if (i++ > 5) {
       console.log("Wrong pool address");
       return;
     }

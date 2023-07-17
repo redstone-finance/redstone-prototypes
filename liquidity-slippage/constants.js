@@ -54,7 +54,47 @@ const constants = {
     address: "0x84cA8bc7997272c7CfB4D0Cd3D55cd942B3c9419",
     decimals: 18,
   },
-  pricesUSD: [1e5, 1e7],
+  WBTC: {
+    symbol: "WBTC",
+    address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+    decimals: 8,
+  },
+  TXJP: {
+    symbol: "TXJP",
+    address: "0x961dD84059505D59f82cE4fb87D3c09bec65301d",
+    decimals: 8,
+  },
+  PNK: {
+    symbol: "PNK",
+    address: "0x93ED3FBe21207Ec2E8f2d3c3de6e058Cb73Bc04d",
+    decimals: 18,
+  },
+  MPL: {
+    symbol: "MPL",
+    address: "0x33349B282065b0284d756F0577FB39c158F935e6",
+    decimals: 18,
+  },
+  USDT: {
+    symbol: "USDT",
+    address: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    decimals: 6,
+  },
+  HBTC: {
+    symbol: "HBTC",
+    address: "0x0316EB71485b0Ab14103307bf65a021042c6d380",
+    decimals: 18,
+  },
+  ETH: {
+    symbol: "ETH",
+    address: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+    decimals: 18,
+  },
+  sETH: {
+    symbol: "sETH",
+    address: "0x5e74C9036fb86BD7eCdcb084a0673EFc32eA31cb",
+    decimals: 18,
+  },
+  pricesUSD: [1e4, 1e8],
 };
 
 module.exports = constants;

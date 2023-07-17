@@ -16,9 +16,13 @@ cryptoASymbol = "USDC";
 cryptoBSymbol = "WETH";
 
 // TODO: Need to manually change pool address...
-const poolAddress = "0x8a649274E4d777FFC6851F13d23A86BBFA2f2Fbf"; // Balancer weth/usdc pool address
-// const poolAddress = "0x165a50Bc092f6870DC111C349baE5Fc35147ac86";
-// const poolAddress = "0x5c6Ee304399DBdB9C8Ef030aB642B10820DB8F56"; // Balancer ohm/weth pool address
+const poolAddress = "0x8a649274E4d777FFC6851F13d23A86BBFA2f2Fbf"; // USDC / WETH
+// const poolAddress = "0x1efF8aF5D577060BA4ac8A29A13525bb0Ee2A3D5"; // WETH / WBTC
+// const poolAddress = "0xddce7b2c3f7Fbc4F1eAb24970c3fd26fEe1FF80F"; // TXJP / WETH
+// const poolAddress = "0xc2A04278Ad502349e6AABb748A41ABdA9dfD18a9"; // PNK / WETH
+// const poolAddress = "0xc1b10e536CD611aCFf7a7c32A9E29cE6A02Ef6ef"; // MPL / USDC
+// const poolAddress = "0x69d460e01070A7BA1bc363885bC8F4F0daa19Bf5"; // DAI / USDC
+// const poolAddress = "0x165a50Bc092f6870DC111C349baE5Fc35147ac86"; // WETH / DAI
 
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];

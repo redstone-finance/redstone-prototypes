@@ -89,11 +89,10 @@ async function calculatePriceDifference(
       toCrypto,
       contract
     );
-    const expectedSecondAmount = fromAmount / currentPrice;
+    const expectedSecondAmount = (fromAmount / currentPrice) * (1 - gasFee);
     const differencePercentage = parseFloat(
       ((receivedSecondAmount - expectedSecondAmount) / expectedSecondAmount) *
-        100 +
-      gasFee
+        100
     ).toFixed(2);
     const priceInUSD = (firstPriceInUSD.value * fromAmount).toFixed(2);
     return `For ${fromAmount} ${fromCrypto.symbol} (${priceInUSD} USD), received ${toCrypto.symbol}: ${receivedSecondAmount}, expected ${toCrypto.symbol}: ${expectedSecondAmount}, difference: ${differencePercentage}%`;

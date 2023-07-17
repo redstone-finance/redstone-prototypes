@@ -13,8 +13,8 @@ dotenv.config();
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 const pricesUSD = constants.pricesUSD;
 
-cryptoASymbol = "WETH";
-cryptoBSymbol = "DAI";
+cryptoASymbol = "BAL";
+cryptoBSymbol = "WETH";
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];
 
@@ -87,7 +87,7 @@ async function calculateSlippage(fromCrypto, toCrypto) {
     `Price ${toCrypto.symbol} in ${fromCrypto.symbol}: ${secondPriceInFirst}`
   );
   const firstPriceInUSD = await redstone.getPrice(fromCrypto.symbol);
-  const gasFee = 0.3;
+  const gasFee = 0.003;
   const results = await calculatePriceDifference(
     pricesUSD,
     firstPriceInUSD,
