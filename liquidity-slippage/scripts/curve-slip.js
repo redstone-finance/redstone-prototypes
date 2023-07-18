@@ -1,15 +1,16 @@
 const ethers = require("ethers");
 const dotenv = require("dotenv");
+const path = require("path");
 const redstone = require("redstone-api");
-const constants = require("./constants");
+const constants = require("../utils/constants");
 const {
   calcPriceSecondInFirst,
   calculatePoolSize,
   getApproximateTokensAmountInPool,
   calculatePriceDifference,
-} = require("./common");
+} = require("../utils/common");
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 const pricesUSD = constants.pricesUSD;
 

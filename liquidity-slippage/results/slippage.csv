@@ -1,0 +1,5 @@
+DEX,TokenA,TokenB,Price Token A in B,Price Token B in A,Pool Size,Slip 10e-4,Slip 10e-6,Slip 10e-8
+
+Balancer,ETH,BTC,0.1,10,10000,0.0001,0.000001,1e-8
+Uniswap V2,ETH,BTC,0.1,10,10000,0.30001,0.000001,1e-8
+Uniswap V2,ETH,BTC,0.1,10,10000,0.30001,0.000001,1e-8

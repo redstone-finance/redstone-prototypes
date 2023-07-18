@@ -1,19 +1,22 @@
 const ethers = require("ethers");
 const dotenv = require("dotenv");
+const path = require("path");
 const redstone = require("redstone-api");
-const constants = require("./constants");
+const constants = require("../utils/constants");
 const {
   calculatePoolSize,
   calcPriceSecondInFirst,
   getApproximateTokensAmountInPool,
   calculatePriceDifference,
-} = require("./common");
+} = require("../utils/common");
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 const pricesUSD = constants.pricesUSD;
 cryptoASymbol = "USDC";
 cryptoBSymbol = "WETH";
+const fee = 3000;
+const gasFee = fee / 1e6;
 
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];
@@ -84,7 +87,6 @@ async function calculateSlippage(fromCrypto, toCrypto) {
   );
 
   const firstPriceInUSD = await redstone.getPrice(fromCrypto.symbol);
-  const gasFee = 0.003;
   const results = await calculatePriceDifference(
     pricesUSD,
     firstPriceInUSD,

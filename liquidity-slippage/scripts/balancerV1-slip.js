@@ -1,15 +1,16 @@
 const ethers = require("ethers");
 const dotenv = require("dotenv");
+const path = require("path");
 const redstone = require("redstone-api");
-const constants = require("./constants");
+const constants = require("../utils/constants");
 const {
   calculatePoolSize,
   calcPriceSecondInFirst,
   getApproximateTokensAmountInPool,
   calculatePriceDifference,
-} = require("./common");
+} = require("../utils/common");
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 const pricesUSD = constants.pricesUSD;
 cryptoASymbol = "USDC";
@@ -32,7 +33,7 @@ const provider = new ethers.providers.JsonRpcProvider(
 );
 
 const BPoolABI = [
-  "function getSpotPrice(address tokenIn, address tokenOut) external view returns (uint spotPrice)",
+  "function getSpotPriceSansFee(address tokenIn, address tokenOut) external view returns (uint spotPrice)",
   "function getBalance(address token) external view returns (uint)",
   "function getDenormalizedWeight(address token) external view returns (uint)",
   "function getSwapFee() external view returns (uint)",
@@ -47,20 +48,26 @@ let tokenBalanceIn,
   secondPriceInFirst;
 
 async function prepareData(fromCrypto, toCrypto) {
-  [swapFee, tokenBalanceIn, tokenWeightIn, tokenBalanceOut, tokenWeightOut] =
-    await Promise.all([
-      balancerPool.getSwapFee(),
-      balancerPool.getBalance(fromCrypto.address),
-      balancerPool.getDenormalizedWeight(fromCrypto.address),
-      balancerPool.getBalance(toCrypto.address),
-      balancerPool.getDenormalizedWeight(toCrypto.address),
-    ]);
-  secondPriceInFirst = calcPriceSecondInFirst(
+  [
+    spotPrice,
+    swapFee,
     tokenBalanceIn,
+    tokenWeightIn,
     tokenBalanceOut,
-    fromCrypto.decimals,
-    toCrypto.decimals
+    tokenWeightOut,
+  ] = await Promise.all([
+    balancerPool.getSpotPriceSansFee(fromCrypto.address, toCrypto.address),
+    balancerPool.getSwapFee(),
+    balancerPool.getBalance(fromCrypto.address),
+    balancerPool.getDenormalizedWeight(fromCrypto.address),
+    balancerPool.getBalance(toCrypto.address),
+    balancerPool.getDenormalizedWeight(toCrypto.address),
+  ]);
+  secondPriceInFirst = ethers.utils.formatUnits(
+    spotPrice.toString(),
+    fromCrypto.decimals
   );
+
   await calculatePoolSize(
     ethers.utils.formatUnits(tokenBalanceIn.toString(), fromCrypto.decimals),
     ethers.utils.formatUnits(tokenBalanceOut.toString(), toCrypto.decimals),

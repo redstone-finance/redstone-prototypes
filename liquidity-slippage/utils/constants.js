@@ -94,7 +94,7 @@ const constants = {
     address: "0x5e74C9036fb86BD7eCdcb084a0673EFc32eA31cb",
     decimals: 18,
   },
-  pricesUSD: [1e4, 1e8],
+  pricesUSD: [1e4, 1e6, 1e8],
 };
 
 module.exports = constants;

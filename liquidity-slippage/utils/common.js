@@ -1,8 +1,9 @@
 const ethers = require("ethers");
 const redstone = require("redstone-api");
 const dotenv = require("dotenv");
+const path = require("path");
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const provider = new ethers.providers.JsonRpcProvider(
   `https://mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`

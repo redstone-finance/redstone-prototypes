@@ -1,15 +1,16 @@
 const ethers = require("ethers");
 const dotenv = require("dotenv");
+const path = require("path");
 const redstone = require("redstone-api");
-const constants = require("./constants");
+const constants = require("../utils/constants");
 const {
   calcPriceSecondInFirst,
   calculatePoolSize,
   getApproximateTokensAmountInPool,
   calculatePriceDifference,
-} = require("./common");
+} = require("../utils/common");
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 const pricesUSD = constants.pricesUSD;
 
@@ -31,21 +32,33 @@ const poolAbi = [
 ];
 const contract = new ethers.Contract(address, abi, provider);
 
-async function getSecondCryptoPriceInFirstCrypto(fromCrypto, toCrypto) {
-  const factoryAddress = "0x1F98431c8aD98523631AE4a59f267346ea31F984"; // Uniswap V3 Factory address
-  const factoryAbi = [
-    "function getPool(address tokenA, address tokenB, uint24 fee) external view returns (address pool)",
-  ];
+let fee = 500;
+const factoryAddress = "0x1F98431c8aD98523631AE4a59f267346ea31F984"; // Uniswap V3 Factory address
+const poolFees = [500, 3000, 10000];
+const factoryAbi = [
+  "function getPool(address tokenA, address tokenB, uint24 fee) external view returns (address pool)",
+];
+async function findPoolAndFee(fromCrypto, toCrypto) {
   const factoryContract = new ethers.Contract(
     factoryAddress,
     factoryAbi,
     provider
   );
-  const poolAddress = await factoryContract.getPool(
-    fromCrypto.address,
-    toCrypto.address,
-    3000 // 0.3% fee
+  const poolAddresses = await Promise.all(
+    poolFees.map((fee) =>
+      factoryContract.getPool(fromCrypto.address, toCrypto.address, fee)
+    )
   );
+  // Find first not empty address
+  for (let i = 0; i < poolAddresses.length; i++) {
+    if (poolAddresses[i] != "0x0000000000000000000000000000000000000000")
+      return [poolAddresses[i], poolFees[i]];
+  }
+  throw new Error("No pool found");
+}
+
+async function getSecondCryptoPriceInFirstCrypto(fromCrypto, toCrypto) {
+  [poolAddress, fee] = await findPoolAndFee(fromCrypto, toCrypto);
   await getApproximateTokensAmountInPool(poolAddress, fromCrypto, toCrypto);
   const poolContract = new ethers.Contract(poolAddress, poolAbi, provider);
   const poolBalance = await poolContract.slot0();
@@ -71,7 +84,7 @@ async function getOutAmount(fromAmount, fromCrypto, toCrypto, contract) {
   const amountOut = await contract.callStatic.quoteExactInputSingle(
     fromCrypto.address,
     toCrypto.address,
-    3000, // 0.3% fee
+    fee,
     amountIn,
     0
   );
@@ -87,7 +100,7 @@ async function calculateSlippage(fromCrypto, toCrypto) {
     `Price ${toCrypto.symbol} in ${fromCrypto.symbol}: ${secondPriceInFirst}`
   );
   const firstPriceInUSD = await redstone.getPrice(fromCrypto.symbol);
-  const gasFee = 0.003;
+  const gasFee = fee / 1e6;
   const results = await calculatePriceDifference(
     pricesUSD,
     firstPriceInUSD,
