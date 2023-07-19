@@ -57,16 +57,16 @@ function appendToCSV(data) {
       const priceKey = `Slip${price.toExponential()}`.replace("+", "");
       const priceKeyAtoB = `${priceKey}AtoB`;
       const priceKeyBtoA = `${priceKey}BtoA`;
-      dataToWrite[priceKeyAtoB] = data.slippageRelated[index][1];
-      dataToWrite[priceKeyBtoA] = data.slippageRelated[index][2];
+      dataToWrite[priceKeyAtoB] = data.slippageUnrelated[index][1];
+      dataToWrite[priceKeyBtoA] = data.slippageUnrelated[index][2];
     });
 
     pricesRelated.forEach((price, index) => {
       const priceKey = `SlipRelated${price.toExponential()}`;
       const priceKeyAtoB = `${priceKey}AtoB`;
       const priceKeyBtoA = `${priceKey}BtoA`;
-      dataToWrite[priceKeyAtoB] = data.slippageUnrelated[index][1];
-      dataToWrite[priceKeyBtoA] = data.slippageUnrelated[index][2];
+      dataToWrite[priceKeyAtoB] = data.slippageRelated[index][1];
+      dataToWrite[priceKeyBtoA] = data.slippageRelated[index][2];
     });
 
     const csvWriter = createCsvWriter({
