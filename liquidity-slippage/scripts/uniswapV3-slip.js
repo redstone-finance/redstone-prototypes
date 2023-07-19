@@ -8,11 +8,16 @@ const {
   calculatePoolSize,
   getApproximateTokensAmountInPool,
   calculatePriceDifference,
+  generateDataObject,
+  getPoolRelatedAmounts,
+  calculateAndWriteToCSV,
 } = require("../utils/common");
+const { get } = require("http");
+
+const DEX = "Uniswap V3";
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
-const pricesUSD = constants.pricesUSD;
 
 cryptoASymbol = "BAL";
 cryptoBSymbol = "WETH";
@@ -57,9 +62,16 @@ async function findPoolAndFee(fromCrypto, toCrypto) {
   throw new Error("No pool found");
 }
 
-async function getSecondCryptoPriceInFirstCrypto(fromCrypto, toCrypto) {
+async function getSecondCryptoPriceInFirstCryptoAndPoolSize(
+  fromCrypto,
+  toCrypto
+) {
   [poolAddress, fee] = await findPoolAndFee(fromCrypto, toCrypto);
-  await getApproximateTokensAmountInPool(poolAddress, fromCrypto, toCrypto);
+  const poolSize = await getApproximateTokensAmountInPool(
+    poolAddress,
+    fromCrypto,
+    toCrypto
+  );
   const poolContract = new ethers.Contract(poolAddress, poolAbi, provider);
   const poolBalance = await poolContract.slot0();
   const sqrtPriceX96 = poolBalance.sqrtPriceX96;
@@ -72,8 +84,17 @@ async function getSecondCryptoPriceInFirstCrypto(fromCrypto, toCrypto) {
     (10 ** Decimal1 / 10 ** Decimal0).toFixed(Decimal1);
   const buyOneOfToken1 = (1 / buyOneOfToken0).toFixed(Decimal0);
   if (fromCrypto.address.toLowerCase() > toCrypto.address.toLowerCase())
-    return buyOneOfToken0;
-  return buyOneOfToken1;
+    return [poolSize, buyOneOfToken0];
+  return [poolSize, buyOneOfToken1];
+}
+
+async function getPricesInEachOther(fromCrypto, toCrypto) {
+  const [poolSize, secondPriceInFirst] =
+    await getSecondCryptoPriceInFirstCryptoAndPoolSize(fromCrypto, toCrypto);
+  const firstPriceInSecond = (1 / secondPriceInFirst).toFixed(
+    toCrypto.decimals
+  );
+  return [poolSize, firstPriceInSecond, secondPriceInFirst];
 }
 
 async function getOutAmount(fromAmount, fromCrypto, toCrypto, contract) {
@@ -92,31 +113,25 @@ async function getOutAmount(fromAmount, fromCrypto, toCrypto, contract) {
 }
 
 async function calculateSlippage(fromCrypto, toCrypto) {
-  const secondPriceInFirst = await getSecondCryptoPriceInFirstCrypto(
-    fromCrypto,
-    toCrypto
-  );
-  console.log(
-    `Price ${toCrypto.symbol} in ${fromCrypto.symbol}: ${secondPriceInFirst}`
-  );
-  const firstPriceInUSD = await redstone.getPrice(fromCrypto.symbol);
+  const [poolSize, firstPriceInSecond, secondPriceInFirst] =
+    await getPricesInEachOther(fromCrypto, toCrypto);
   const gasFee = fee / 1e6;
-  const results = await calculatePriceDifference(
-    pricesUSD,
-    firstPriceInUSD,
-    secondPriceInFirst,
-    gasFee,
+
+  calculateAndWriteToCSV(
+    DEX,
     fromCrypto,
     toCrypto,
+    poolSize,
+    secondPriceInFirst,
+    firstPriceInSecond,
+    gasFee,
     getOutAmount,
     contract
   );
-  results.forEach((result) => console.log(result));
 }
 
 async function findSlippage() {
   await calculateSlippage(cryptoA, cryptoB);
-  await calculateSlippage(cryptoB, cryptoA);
 }
 
 findSlippage().catch((err) => {

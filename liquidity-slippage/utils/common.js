@@ -2,6 +2,13 @@ const ethers = require("ethers");
 const redstone = require("redstone-api");
 const dotenv = require("dotenv");
 const path = require("path");
+const axios = require("axios");
+const { get } = require("http");
+const constants = require("../utils/constants");
+const { appendToCSV } = require("../utils/csv-utils");
+
+const pricesUnrelated = constants.pricesUnrelated;
+const pricesRelated = constants.pricesRelated;
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
@@ -23,10 +30,10 @@ async function calculatePoolSize(
     token0Amount * token0PriceInUSD.value +
     token1Amount * token1PriceInUSD.value
   ).toFixed(2);
-  const formattedPoolSize = parseFloat(poolSize).toLocaleString();
-  console.log(
-    `Pool size: ${formattedPoolSize} USD (may contain unclaimed fees)`
-  );
+  // const formattedPoolSize = parseFloat(poolSize).toLocaleString();
+  // console.log(
+  //   `Pool size: ${formattedPoolSize} USD (may contain unclaimed fees)`
+  // );
   return poolSize;
 }
 
@@ -61,7 +68,7 @@ async function getApproximateTokensAmountInPool(
   const amountFrom = await ERC20Contract.balanceOf(poolAddress);
   ERC20Contract = new ethers.Contract(toCrypto.address, ERC20Abi, provider);
   const amountTo = await ERC20Contract.balanceOf(poolAddress);
-  await calculatePoolSize(
+  return await calculatePoolSize(
     ethers.utils.formatUnits(amountFrom.toString(), fromCrypto.decimals),
     ethers.utils.formatUnits(amountTo.toString(), toCrypto.decimals),
     fromCrypto.symbol,
@@ -69,9 +76,57 @@ async function getApproximateTokensAmountInPool(
   );
 }
 
+async function getPriceFromCoingecko(name) {
+  const apiUrl = `https://api.coingecko.com/api/v3/simple/price?ids=${name}&vs_currencies=usd`;
+
+  const response = await axios.get(apiUrl);
+  return response.data[name].usd;
+}
+
+async function getPrice(crypto) {
+  try {
+    const price = await redstone.getPrice(crypto.symbol);
+    return price.value;
+  } catch (error) {
+    try {
+      const price = await getPriceFromCoingecko(crypto.name);
+      return price;
+    } catch (error) {
+      console.log(`Price for ${symbol} not found`, error);
+    }
+  }
+}
+
+async function callGetOutAmount(
+  amountInUSD,
+  tokenInPriceInUSD,
+  secondPriceInFirst,
+  fromCrypto,
+  toCrypto,
+  gasFee,
+  contract,
+  getOutAmount
+) {
+  const fromAmount = Number(amountInUSD / tokenInPriceInUSD).toFixed(
+    fromCrypto.decimals
+  );
+  const receivedSecondAmount = await getOutAmount(
+    fromAmount,
+    fromCrypto,
+    toCrypto,
+    contract
+  );
+  const expectedSecondAmount = (fromAmount / secondPriceInFirst) * (1 - gasFee);
+  const differencePercentage = parseFloat(
+    ((receivedSecondAmount - expectedSecondAmount) / expectedSecondAmount) * 100
+  ).toFixed(2);
+
+  return differencePercentage;
+}
+
 async function calculatePriceDifference(
-  pricesUSD,
-  firstPriceInUSD,
+  prices,
+  firstPriceInSecond,
   secondPriceInFirst,
   gasFee,
   fromCrypto,
@@ -79,28 +134,123 @@ async function calculatePriceDifference(
   getOutAmount,
   contract
 ) {
-  const resultPromises = pricesUSD.map(async (price) => {
-    const fromAmount = Number(price / firstPriceInUSD.value).toFixed(
-      fromCrypto.decimals
-    );
-    const currentPrice = secondPriceInFirst;
-    const receivedSecondAmount = await getOutAmount(
-      fromAmount,
+  const firstPriceInUSD = await getPrice(fromCrypto);
+  const secondPriceInUSD = await getPrice(toCrypto);
+  const resultPromises = prices.map(async (price) => {
+    const slipAtoB = callGetOutAmount(
+      price,
+      firstPriceInUSD,
+      secondPriceInFirst,
       fromCrypto,
       toCrypto,
-      contract
+      gasFee,
+      contract,
+      getOutAmount
     );
-    const expectedSecondAmount = (fromAmount / currentPrice) * (1 - gasFee);
-    const differencePercentage = parseFloat(
-      ((receivedSecondAmount - expectedSecondAmount) / expectedSecondAmount) *
-        100
-    ).toFixed(2);
-    const priceInUSD = (firstPriceInUSD.value * fromAmount).toFixed(2);
-    return `For ${fromAmount} ${fromCrypto.symbol} (${priceInUSD} USD), received ${toCrypto.symbol}: ${receivedSecondAmount}, expected ${toCrypto.symbol}: ${expectedSecondAmount}, difference: ${differencePercentage}%`;
+    const slipBtoA = callGetOutAmount(
+      price,
+      secondPriceInUSD,
+      firstPriceInSecond,
+      toCrypto,
+      fromCrypto,
+      gasFee,
+      contract,
+      getOutAmount
+    );
+    const [resultAtoB, resultBtoA] = await Promise.all([slipAtoB, slipBtoA]);
+    return [resultAtoB, resultBtoA];
   });
 
   const results = await Promise.all(resultPromises);
   return results;
+}
+
+function generateDataObject(
+  DEX,
+  cryptoASymbol,
+  cryptoBSymbol,
+  poolSize,
+  secondPriceInFirst,
+  firstPriceInSecond,
+  slippageUnrelated,
+  pricesUnrelatedUSD,
+  slippageRelated,
+  pricesRelatedUSD
+) {
+  slippageUnrelated.forEach((slippage, index) => {
+    slippage.unshift(pricesUnrelatedUSD[index].toString());
+  });
+  slippageRelated.forEach((slippage, index) => {
+    slippage.unshift(pricesRelatedUSD[index].toString());
+  });
+  const dataObject = {
+    DEX: DEX,
+    TokenA: cryptoASymbol,
+    TokenB: cryptoBSymbol,
+    poolSize: poolSize,
+    secondPriceInFirst: secondPriceInFirst,
+    firstPriceInSecond: firstPriceInSecond,
+    slippageUnrelated,
+    slippageRelated,
+  };
+  console.log(dataObject);
+  return dataObject;
+}
+
+function getPoolRelatedAmounts(poolSize) {
+  const poolRelatedAmounts = pricesRelated.map((part) =>
+    (poolSize * part).toFixed(2)
+  );
+  return poolRelatedAmounts;
+}
+
+async function calculateAndWriteToCSV(
+  DEX,
+  fromCrypto,
+  toCrypto,
+  poolSize,
+  secondPriceInFirst,
+  firstPriceInSecond,
+  gasFee,
+  getOutAmount,
+  contract
+) {
+  const poolRelatedAmounts = getPoolRelatedAmounts(poolSize);
+  const [resultsIndependent, resultsDependent] = await Promise.all([
+    calculatePriceDifference(
+      pricesUnrelated,
+      firstPriceInSecond,
+      secondPriceInFirst,
+      gasFee,
+      fromCrypto,
+      toCrypto,
+      getOutAmount,
+      contract
+    ),
+    calculatePriceDifference(
+      poolRelatedAmounts,
+      firstPriceInSecond,
+      secondPriceInFirst,
+      gasFee,
+      fromCrypto,
+      toCrypto,
+      getOutAmount,
+      contract
+    ),
+  ]);
+  const dataObject = generateDataObject(
+    DEX,
+    fromCrypto.symbol,
+    toCrypto.symbol,
+    poolSize,
+    secondPriceInFirst,
+    firstPriceInSecond,
+    resultsIndependent,
+    pricesRelated,
+    resultsDependent,
+    poolRelatedAmounts
+  );
+  appendToCSV(dataObject);
 }
 
 module.exports = {
@@ -108,4 +258,7 @@ module.exports = {
   calcPriceSecondInFirst,
   getApproximateTokensAmountInPool,
   calculatePriceDifference,
+  generateDataObject,
+  getPoolRelatedAmounts,
+  calculateAndWriteToCSV,
 };
