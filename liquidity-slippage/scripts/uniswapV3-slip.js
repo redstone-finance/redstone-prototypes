@@ -4,22 +4,17 @@ const path = require("path");
 const redstone = require("redstone-api");
 const constants = require("../utils/constants");
 const {
-  calcPriceSecondInFirst,
-  calculatePoolSize,
   getApproximateTokensAmountInPool,
-  calculatePriceDifference,
-  generateDataObject,
-  getPoolRelatedAmounts,
   calculateAndWriteToCSV,
+  reversePrice,
 } = require("../utils/common");
-const { get } = require("http");
 
 const DEX = "Uniswap V3";
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
-cryptoASymbol = "DIA";
+cryptoASymbol = "OX";
 cryptoBSymbol = "WETH";
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];
@@ -91,7 +86,8 @@ async function getSecondCryptoPriceInFirstCryptoAndPoolSize(
 async function getPricesInEachOther(fromCrypto, toCrypto) {
   const [poolSize, secondPriceInFirst] =
     await getSecondCryptoPriceInFirstCryptoAndPoolSize(fromCrypto, toCrypto);
-  const firstPriceInSecond = (1 / secondPriceInFirst).toFixed(
+  const firstPriceInSecond = reversePrice(
+    secondPriceInFirst,
     toCrypto.decimals
   );
   return [poolSize, firstPriceInSecond, secondPriceInFirst];

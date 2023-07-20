@@ -16,25 +16,44 @@ const provider = new ethers.providers.JsonRpcProvider(
   `https://mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`
 );
 
-async function calculatePoolSize(
-  token0Amount,
-  token1Amount,
-  token0Symbol,
-  token1Symbol
-) {
+async function getPriceFromCoingecko(name) {
+  const apiUrl = `https://api.coingecko.com/api/v3/simple/price?ids=${name}&vs_currencies=usd`;
+  const response = await axios.get(apiUrl);
+  return response.data[name].usd;
+}
+
+async function getPrice(crypto) {
+  try {
+    const price = await redstone.getPrice(crypto.symbol);
+    return price.value;
+  } catch (error) {
+    try {
+      const price = await getPriceFromCoingecko(crypto.name);
+      return price;
+    } catch (error) {
+      console.log(`Price for ${symbol} not found`, error);
+    }
+  }
+}
+
+async function calculatePoolSize(token0Amount, token1Amount, token0, token1) {
   const [token0PriceInUSD, token1PriceInUSD] = await Promise.all([
-    redstone.getPrice(token0Symbol),
-    redstone.getPrice(token1Symbol),
+    getPrice(token0),
+    getPrice(token1),
   ]);
   const poolSize = (
-    token0Amount * token0PriceInUSD.value +
-    token1Amount * token1PriceInUSD.value
+    token0Amount * token0PriceInUSD +
+    token1Amount * token1PriceInUSD
   ).toFixed(2);
   // const formattedPoolSize = parseFloat(poolSize).toLocaleString();
   // console.log(
   //   `Pool size: ${formattedPoolSize} USD (may contain unclaimed fees)`
   // );
   return poolSize;
+}
+
+function reversePrice(price, decimals) {
+  return (1 / price).toFixed(decimals);
 }
 
 function calcPriceSecondInFirst(
@@ -50,6 +69,22 @@ function calcPriceSecondInFirst(
     secondPriceInFirst.toString(),
     token0Decimals
   );
+}
+
+function calcPricesInEachOther(
+  token0Amount,
+  token1Amount,
+  token0Decimals,
+  token1Decimals
+) {
+  const secondPriceInFirst = calcPriceSecondInFirst(
+    token0Amount,
+    token1Amount,
+    token0Decimals,
+    token1Decimals
+  );
+  const firstPriceInSecond = reversePrice(secondPriceInFirst, token1Decimals);
+  return [secondPriceInFirst, firstPriceInSecond];
 }
 
 async function getApproximateTokensAmountInPool(
@@ -71,30 +106,9 @@ async function getApproximateTokensAmountInPool(
   return await calculatePoolSize(
     ethers.utils.formatUnits(amountFrom.toString(), fromCrypto.decimals),
     ethers.utils.formatUnits(amountTo.toString(), toCrypto.decimals),
-    fromCrypto.symbol,
-    toCrypto.symbol
+    fromCrypto,
+    toCrypto
   );
-}
-
-async function getPriceFromCoingecko(name) {
-  const apiUrl = `https://api.coingecko.com/api/v3/simple/price?ids=${name}&vs_currencies=usd`;
-
-  const response = await axios.get(apiUrl);
-  return response.data[name].usd;
-}
-
-async function getPrice(crypto) {
-  try {
-    const price = await redstone.getPrice(crypto.symbol);
-    return price.value;
-  } catch (error) {
-    try {
-      const price = await getPriceFromCoingecko(crypto.name);
-      return price;
-    } catch (error) {
-      console.log(`Price for ${symbol} not found`, error);
-    }
-  }
 }
 
 async function callGetOutAmount(
@@ -261,4 +275,6 @@ module.exports = {
   generateDataObject,
   getPoolRelatedAmounts,
   calculateAndWriteToCSV,
+  reversePrice,
+  calcPricesInEachOther,
 };

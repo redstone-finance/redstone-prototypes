@@ -5,18 +5,19 @@ const redstone = require("redstone-api");
 const constants = require("../utils/constants");
 const {
   calculatePoolSize,
-  calcPriceSecondInFirst,
-  getApproximateTokensAmountInPool,
-  calculatePriceDifference,
+  calcPricesInEachOther,
+  calculateAndWriteToCSV,
 } = require("../utils/common");
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
-const pricesUSD = constants.pricesUSD;
-cryptoASymbol = "USDC";
-cryptoBSymbol = "WETH";
+
+cryptoASymbol = "WETH";
+cryptoBSymbol = "DAI";
+
 const fee = 3000;
 const gasFee = fee / 1e6;
+let DEX = "Uniswap V2";
 
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];
@@ -32,7 +33,7 @@ const pairAbi = [
   "function token0() external view returns (address)",
 ];
 
-async function getSecondCryptoPriceInFirstCrypto(fromCrypto, toCrypto) {
+async function getPricesInEachOther(fromCrypto, toCrypto) {
   const factoryAbi = [
     "function getPair(address tokenA, address tokenB) external view returns (address pair)",
   ];
@@ -53,20 +54,20 @@ async function getSecondCryptoPriceInFirstCrypto(fromCrypto, toCrypto) {
 
   if (toCrypto.address.toLowerCase() === token0.toLowerCase())
     [reserves0, reserves1] = [reserves1, reserves0];
-  await calculatePoolSize(
+  const poolSize = await calculatePoolSize(
     ethers.utils.formatUnits(reserves0, fromCrypto.decimals),
     ethers.utils.formatUnits(reserves1, toCrypto.decimals),
-    fromCrypto.symbol,
-    toCrypto.symbol
+    fromCrypto,
+    toCrypto
   );
   // await getApproximateTokensAmountInPool(pairAddress, fromCrypto, toCrypto);
-
-  return await calcPriceSecondInFirst(
+  const [secondPriceInFirst, firstPriceInSecond] = calcPricesInEachOther(
     reserves0,
     reserves1,
     fromCrypto.decimals,
     toCrypto.decimals
   );
+  return [poolSize, firstPriceInSecond, secondPriceInFirst];
 }
 
 async function getOutAmount(fromAmount, fromCrypto, toCrypto, contract) {
@@ -78,46 +79,39 @@ async function getOutAmount(fromAmount, fromCrypto, toCrypto, contract) {
 }
 
 async function calculateSlippage(fromCrypto, toCrypto) {
-  const secondPriceInFirst = await getSecondCryptoPriceInFirstCrypto(
-    fromCrypto,
-    toCrypto
-  );
-  console.log(
-    `Price ${toCrypto.symbol} in ${fromCrypto.symbol}: ${secondPriceInFirst}`
-  );
+  const [poolSize, firstPriceInSecond, secondPriceInFirst] =
+    await getPricesInEachOther(fromCrypto, toCrypto);
 
-  const firstPriceInUSD = await redstone.getPrice(fromCrypto.symbol);
-  const results = await calculatePriceDifference(
-    pricesUSD,
-    firstPriceInUSD,
-    secondPriceInFirst,
-    gasFee,
+  calculateAndWriteToCSV(
+    DEX,
     fromCrypto,
     toCrypto,
+    poolSize,
+    secondPriceInFirst,
+    firstPriceInSecond,
+    gasFee,
     getOutAmount,
     contract
   );
-  results.forEach((result) => console.log(result));
 }
 
 async function findSlippage() {
   await calculateSlippage(cryptoA, cryptoB);
-  await calculateSlippage(cryptoB, cryptoA);
 }
 
 let address = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"; // Uniswap V2 Router address
 let factoryAddress = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"; // Uniswap V2 Factory address
 let contract = new ethers.Contract(address, abi, provider);
 async function main() {
-  console.log("Uniswap V2");
+  DEX = "Uniswap V2";
   await findSlippage().catch((err) => {
     console.error("Error occurred:", err);
   });
 
+  DEX = "SushiSwap";
   address = "0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f"; // SushiSwap Router02 address
   factoryAddress = "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac"; // SushiSwap Factory address
   contract = new ethers.Contract(address, abi, provider);
-  console.log("SushiSwap");
   await findSlippage().catch((err) => {
     console.error("Error occurred:", err);
   });

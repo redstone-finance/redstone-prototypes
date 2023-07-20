@@ -12,10 +12,10 @@ const {
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
-const pricesUSD = constants.pricesUSD;
+const pricesUSD = constants.pricesUnrelated;
 
-cryptoASymbol = "HBTC";
-cryptoBSymbol = "WBTC";
+cryptoASymbol = "DAI";
+cryptoBSymbol = "USDC";
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];
 
@@ -24,8 +24,8 @@ const provider = new ethers.providers.JsonRpcProvider(
 );
 
 // TODO: Need to manually change pool address...
-// const address = "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7"; // DAI, USDC, USDT
-const address = "0x4CA9b3063Ec5866A4B82E437059D2C43d1be596F"; // HBTC, WBTC
+const address = "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7"; // DAI, USDC, USDT
+// const address = "0x4CA9b3063Ec5866A4B82E437059D2C43d1be596F"; // HBTC, WBTC
 // const address = "0xc5424B857f758E906013F3555Dad202e4bdB4567"; // ETH, sETH
 // const address = "0xD51a44d3FaE010294C616388b506AcdA1bfAAE46"; // WBTC, WETH, USDT
 
@@ -34,10 +34,11 @@ let toIndex = -1;
 
 const abi = [
   "function get_dy(int128 i, int128 j, uint256 dx) external view returns (uint256)",
-  "function get_dx(int128 i, int128 j, uint256 dy) external view returns (uint256)",
   "function coins(uint256 i) external view returns (address)",
   "function balances(uint256 i) external view returns (uint256)",
   "function get_virtual_price() external view returns (uint256)",
+  "function exchange(int128 i, int128 j, uint256 dx, uint256 min_dy) external returns (uint256)",
+  "function exchange_underlying(int128 i, int128 j, uint256 dx, uint256 min_dy) external returns (uint256)",
 ];
 
 const contract = new ethers.Contract(address, abi, provider);
@@ -48,19 +49,23 @@ async function getSecondCryptoPriceInFirstCrypto(fromCrypto, toCrypto) {
     contract.balances(toIndex),
   ]);
 
-  await calculatePoolSize(
+  const poolSize = await calculatePoolSize(
     ethers.utils.formatUnits(balanceFrom.toString(), fromCrypto.decimals),
     ethers.utils.formatUnits(balanceTo.toString(), toCrypto.decimals),
     fromCrypto.symbol,
     toCrypto.symbol
   );
+  console.log(poolSize);
   // await getApproximateTokensAmountInPool(address, fromCrypto, toCrypto);
 
-  const secondPriceInFirst = await contract.get_dy(
+  //TODO: Unable to make any transaction... on contract "0xD51a44d3FaE010294C616388b506AcdA1bfAAE46"
+  const secondPriceInFirst = await contract.callStatic.get_dy(
     fromIndex,
     toIndex,
     ethers.utils.parseUnits("1", fromCrypto.decimals)
   );
+  console.log(secondPriceInFirst.toString());
+
   return ethers.utils.formatUnits(
     secondPriceInFirst.toString(),
     toCrypto.decimals
