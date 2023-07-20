@@ -19,7 +19,7 @@ const DEX = "Uniswap V3";
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
-cryptoASymbol = "BAL";
+cryptoASymbol = "DIA";
 cryptoBSymbol = "WETH";
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];
