@@ -1,7 +1,6 @@
 const ethers = require("ethers");
 const dotenv = require("dotenv");
 const path = require("path");
-const redstone = require("redstone-api");
 const constants = require("../utils/constants");
 const {
   getApproximateTokensAmountInPool,
@@ -14,7 +13,7 @@ const DEX = "Uniswap V3";
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
-cryptoASymbol = "OX";
+cryptoASymbol = "WBTC";
 cryptoBSymbol = "WETH";
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];

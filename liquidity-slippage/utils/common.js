@@ -31,7 +31,7 @@ async function getPrice(crypto) {
       const price = await getPriceFromCoingecko(crypto.name);
       return price;
     } catch (error) {
-      console.log(`Price for ${symbol} not found`, error);
+      console.log(`Price for ${crypto.symbol} not found`, error);
     }
   }
 }
@@ -260,7 +260,7 @@ async function calculateAndWriteToCSV(
     secondPriceInFirst,
     firstPriceInSecond,
     resultsIndependent,
-    pricesRelated,
+    pricesUnrelated,
     resultsDependent,
     poolRelatedAmounts
   );

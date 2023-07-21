@@ -1,7 +1,6 @@
 const ethers = require("ethers");
 const dotenv = require("dotenv");
 const path = require("path");
-const redstone = require("redstone-api");
 const constants = require("../utils/constants");
 const {
   calculatePoolSize,
@@ -13,11 +12,10 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
 cryptoASymbol = "WETH";
-cryptoBSymbol = "DAI";
+cryptoBSymbol = "SNX";
 
 const fee = 3000;
 const gasFee = fee / 1e6;
-let DEX = "Uniswap V2";
 
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];
@@ -99,15 +97,19 @@ async function findSlippage() {
   await calculateSlippage(cryptoA, cryptoB);
 }
 
-let address = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"; // Uniswap V2 Router address
-let factoryAddress = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"; // Uniswap V2 Factory address
-let contract = new ethers.Contract(address, abi, provider);
-async function main() {
+let DEX, address, factoryAddress, contract;
+
+async function uniswapV2() {
   DEX = "Uniswap V2";
+  address = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"; // Uniswap V2 Router address
+  factoryAddress = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"; // Uniswap V2 Factory address
+  contract = new ethers.Contract(address, abi, provider);
   await findSlippage().catch((err) => {
     console.error("Error occurred:", err);
   });
+}
 
+async function sushiSwap() {
   DEX = "SushiSwap";
   address = "0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f"; // SushiSwap Router02 address
   factoryAddress = "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac"; // SushiSwap Factory address
@@ -115,6 +117,11 @@ async function main() {
   await findSlippage().catch((err) => {
     console.error("Error occurred:", err);
   });
+}
+
+async function main() {
+  await sushiSwap();
+  await uniswapV2();
 }
 
 main().catch((err) => {

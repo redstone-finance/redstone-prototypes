@@ -1,7 +1,8 @@
 const ethers = require("ethers");
 const dotenv = require("dotenv");
+const path = require("path");
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
 const provider = new ethers.providers.JsonRpcProvider(
@@ -9,7 +10,7 @@ const provider = new ethers.providers.JsonRpcProvider(
 );
 
 // Replace with your crypto address
-const cryptoAddress = "0x78a0A62Fba6Fb21A83FE8a3433d44C73a4017A6f";
+const cryptoAddress = "0x9bf1D7D63dD7a4ce167CF4866388226EEefa702E";
 
 async function getDecimals() {
   const contract = new ethers.Contract(
