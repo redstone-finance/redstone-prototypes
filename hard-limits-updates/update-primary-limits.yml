@@ -1,0 +1,24 @@
+name: Update Limits - Primary Prod
+
+on:
+  schedule:
+    - cron: "0 */12 * * *"
+
+jobs:
+  update-limits:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Update Hard Limits - Primary Prod
+        run: npm run update-limits -- --service primary-prod

@@ -1,0 +1,10 @@
+{
+  "name": "token-limits-updater",
+  "version": "1.0.0",
+  "scripts": {
+    "update-limits": "node update-limits.js"
+  },
+  "dependencies": {
+    "axios": "^0.21.1"
+  }
+}
