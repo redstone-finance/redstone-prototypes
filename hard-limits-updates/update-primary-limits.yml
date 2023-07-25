@@ -15,10 +15,18 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: "14"
+          node-version: "16"
 
       - name: Install dependencies
         run: npm install
 
       - name: Update Hard Limits - Primary Prod
-        run: npm run update-limits -- --service primary-prod
+        run: npm run update-limits -- --service primary
+
+      - name: Commit and Push Changes
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add -A
+          git commit -m "Automated update of hard limits"
+          git push

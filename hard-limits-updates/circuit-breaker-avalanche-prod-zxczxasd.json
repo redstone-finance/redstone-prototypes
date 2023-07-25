@@ -1,0 +1,218 @@
+{
+  "ETH": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "USDT": {
+    "lower": 1960,
+    "upper": 2040
+  },
+  "PNG": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "AVAX": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "LINK": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "BTC": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "QI": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "USDC": {
+    "lower": 1960,
+    "upper": 2040
+  },
+  "sAVAX": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "PTP": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "YY_AAVE_AVAX": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "YY_PTP_sAVAX": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "PNG_AVAX_USDC_LP": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "PNG_AVAX_USDT_LP": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "PNG_AVAX_ETH_LP": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "TJ_AVAX_USDC_LP": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "TJ_AVAX_USDT_LP": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "TJ_AVAX_ETH_LP": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "TJ_AVAX_BTC_LP": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "TJ_AVAX_sAVAX_LP": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "MOO_TJ_AVAX_USDC_LP": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "YY_PNG_AVAX_USDC_LP": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "YY_PNG_AVAX_ETH_LP": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "YY_TJ_AVAX_sAVAX_LP": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "YY_TJ_AVAX_USDC_LP": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "YY_TJ_AVAX_ETH_LP": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "XAVA": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "YYAV3SA1": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "GMX": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "GLP": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "JOE": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "BUSD": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "YY_GLP": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "DAI": {
+    "lower": 1960,
+    "upper": 2040
+  },
+  "SHLB_AVAX-USDC_B": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "SHLB_BTC.b-AVAX_B": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "SHLB_USDT.e-USDt_C": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "SHLB_JOE-AVAX_B": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "USDT.e": {
+    "lower": 1960,
+    "upper": 2040
+  },
+  "SOFR": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "SOFR_EFFECTIVE_DATE": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "SOFRAI": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "SOFRAI_EFFECTIVE_DATE": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "gmdUSDC": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "gmdAVAX": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "gmdBTC": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "gmdETH": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "EUROC": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "SHLB_EUROC-USDC_V2_1_B": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "TJ_AVAX_USDC_AUTO": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "CRV": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "crvUSDBTCETH": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "IB01.L": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "SHLB_GMX-AVAX_B": {
+    "lower": 1000,
+    "upper": 3000
+  }
+}

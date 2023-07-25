@@ -1,41 +1,77 @@
 const axios = require("axios");
 const fs = require("fs");
+const dotenv = require("dotenv");
+const {
+  stableCoins,
+  normalTokens,
+  stableCoinsLimitPercentage,
+  normalTokensLimitPercentage,
+} = require("./constants.js");
+dotenv.config();
+const alertUrl = process.env.ALERT_URL;
+
+const hiddenNames = {
+  primary: "xasdqwr",
+  avalanche: "zxczxasd",
+};
 
 async function updateLimits(service) {
-  const configUrl = `https://raw.githubusercontent.com/your-remote-config-repo/circuit-breaker-${service}-xasdqwr.json`;
+  const configUrl = `https://raw.githubusercontent.com/redstone-finance/redstone-oracles-monorepo/main/packages/oracle-node/manifests/data-services/${service}.json`;
+  const filename = `circuit-breaker-${service}-prod-${hiddenNames[service]}.json`;
   try {
     const response = await axios.get(configUrl);
-    const config = response.data;
-
-    // Update hard limits based on the service type (normal/stablecoin)
-    const percentageChange = service === "primary-prod" ? 0.5 : 0.02;
-    for (const token in config) {
-      const { lower, upper } = config[token];
-      const latestValue = fetchLatestValueForToken(token); // Implement this function to fetch the latest value for each token.
-      const newLower = latestValue * (1 - percentageChange);
-      const newUpper = latestValue * (1 + percentageChange);
-      config[token] = { lower: newLower, upper: newUpper };
-    }
-
-    // Save the updated limits back to the file
-    fs.writeFileSync(
-      `circuit-breaker-${service}-xasdqwr.json`,
-      JSON.stringify(config, null, 2)
-    );
-  } catch (error) {
-    // Send an alert to a configurable uptime-kuma URL in case of any issues during the update
-    const alertUrl = "https://your-uptime-kuma-url/alert";
-    axios.post(alertUrl, {
-      message: `Error updating limits for ${service}: ${error.message}`,
+    const tokens = Object.keys(response.data["tokens"]);
+    const hardLimitsPromises = tokens.map(async (token) => {
+      const limitPercentage = getLimitPercentage(token);
+      return { [token]: await getHardLimits(token, limitPercentage) };
     });
+    Promise.all(hardLimitsPromises).then((results) => {
+      const hardLimits = results.reduce(
+        (acc, curr) => ({ ...acc, ...curr }),
+        {}
+      );
+      saveToFile(filename, hardLimits);
+    });
+  } catch (error) {
+    sendAlert(service, error);
   }
 }
 
-function fetchLatestValueForToken(token) {
-  // Implement the logic to fetch the latest value for the given token.
-  // You may use an API or any other data source to get this value.
-  // For this example, let's assume a dummy value.
-  return 1000;
+function getLimitPercentage(token) {
+  if (stableCoins.includes(token)) {
+    return stableCoinsLimitPercentage;
+  } else if (normalTokens.includes(token)) {
+    return normalTokensLimitPercentage;
+  } else {
+    throw new Error("Unknown token", token);
+  }
+}
+
+async function getHardLimits(token, limitPercentage) {
+  const latestValue = await fetchLatestValueForToken(token);
+  return calculateLimits(latestValue, limitPercentage);
+}
+
+async function fetchLatestValueForToken(token) {
+  //TODO: fetch the latest value from the redstone oracle.
+  // A dummy value.
+  return 2000;
+}
+
+function calculateLimits(latestValue, limitPercentage) {
+  const lower = latestValue * (1 - limitPercentage);
+  const upper = latestValue * (1 + limitPercentage);
+  return { lower, upper };
+}
+
+function saveToFile(filename, hardLimits) {
+  fs.writeFileSync(filename, JSON.stringify(hardLimits, null, 2));
+}
+
+function sendAlert(service, error) {
+  axios.post(alertUrl, {
+    message: `Error updating limits for ${service}: ${error.message}`,
+  });
 }
 
 const service = process.argv[2];
@@ -43,6 +79,6 @@ if (service) {
   updateLimits(service);
 } else {
   console.error(
-    "Please provide the service name (e.g., primary-prod or avalanche-prod)."
+    "Please provide the service name (e.g., primary or avalanche)."
   );
 }

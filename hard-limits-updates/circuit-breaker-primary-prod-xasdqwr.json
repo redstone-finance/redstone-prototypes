@@ -1,0 +1,98 @@
+{
+  "VST": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "USDC": {
+    "lower": 1960,
+    "upper": 2040
+  },
+  "USDT": {
+    "lower": 1960,
+    "upper": 2040
+  },
+  "DAI": {
+    "lower": 1960,
+    "upper": 2040
+  },
+  "FXS": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "FRAX": {
+    "lower": 1960,
+    "upper": 2040
+  },
+  "ETH": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "WSTETH": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "SWETH": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "FRXETH": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "ALETH": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "crvFRAX": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "3Crv": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "ALUSD": {
+    "lower": 1960,
+    "upper": 2040
+  },
+  "LUSD": {
+    "lower": 1960,
+    "upper": 2040
+  },
+  "AAVE": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "C3M": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "SONIA": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "SOFR": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "SOFR_EFFECTIVE_DATE": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "SOFRAI": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "SOFRAI_EFFECTIVE_DATE": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "USDC.USDT": {
+    "lower": 1000,
+    "upper": 3000
+  },
+  "USDC.DAI": {
+    "lower": 1000,
+    "upper": 3000
+  }
+}
