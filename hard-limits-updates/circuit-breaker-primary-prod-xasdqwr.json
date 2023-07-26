@@ -1,98 +1,86 @@
 {
   "VST": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 0.49655461571112175,
+    "upper": 1.4896638471333652
   },
   "USDC": {
-    "lower": 1960,
-    "upper": 2040
+    "lower": 0,
+    "upper": 0
   },
   "USDT": {
-    "lower": 1960,
-    "upper": 2040
+    "lower": 0,
+    "upper": 0
   },
   "DAI": {
-    "lower": 1960,
-    "upper": 2040
+    "lower": 0,
+    "upper": 0
   },
   "FXS": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 0,
+    "upper": 0
   },
   "FRAX": {
-    "lower": 1960,
-    "upper": 2040
+    "lower": 0,
+    "upper": 0
   },
   "ETH": {
-    "lower": 1000,
-    "upper": 3000
-  },
-  "WSTETH": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 0,
+    "upper": 0
   },
   "SWETH": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 950.5506473354164,
+    "upper": 2851.6519420062496
   },
   "FRXETH": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 927.4005209061681,
+    "upper": 2782.2015627185046
   },
   "ALETH": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 920.5098121415941,
+    "upper": 2761.5294364247825
   },
   "crvFRAX": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 0.5003991328721946,
+    "upper": 1.5011973986165839
   },
   "3Crv": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 0.5132512766053083,
+    "upper": 1.539753829815925
   },
   "ALUSD": {
-    "lower": 1960,
-    "upper": 2040
+    "lower": 0.9781643537560831,
+    "upper": 1.0180894294195968
   },
   "LUSD": {
-    "lower": 1960,
-    "upper": 2040
+    "lower": 0.979771294876304,
+    "upper": 1.019761959973296
   },
   "AAVE": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 35.1717585,
+    "upper": 105.5152755
   },
   "C3M": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 58.44,
+    "upper": 175.32
   },
   "SONIA": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 2.4653,
+    "upper": 7.3959
   },
   "SOFR": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 2.525,
+    "upper": 7.574999999999999
   },
   "SOFR_EFFECTIVE_DATE": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 845100000,
+    "upper": 2535300000
   },
   "SOFRAI": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 0.544550045,
+    "upper": 1.6336501350000001
   },
   "SOFRAI_EFFECTIVE_DATE": {
-    "lower": 1000,
-    "upper": 3000
-  },
-  "USDC.USDT": {
-    "lower": 1000,
-    "upper": 3000
-  },
-  "USDC.DAI": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 845143200,
+    "upper": 2535429600
   }
 }

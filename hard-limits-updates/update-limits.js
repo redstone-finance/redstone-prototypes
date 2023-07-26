@@ -11,30 +11,48 @@ dotenv.config();
 const alertUrl = process.env.ALERT_URL;
 
 const hiddenNames = {
-  primary: "xasdqwr",
-  avalanche: "zxczxasd",
+  primary: {
+    hash: "xasdqwr",
+    manifestUrl:
+      "https://raw.githubusercontent.com/redstone-finance/redstone-oracles-monorepo/f4ab23f92b2e65fade1233214b57ba1ee0ca7e3f/packages/oracle-node/manifests/data-services/primary.json",
+  },
+  avalanche: {
+    hash: "zxczxasd",
+    manifestUrl:
+      "https://raw.githubusercontent.com/redstone-finance/redstone-oracles-monorepo/main/packages/oracle-node/manifests/data-services/avalanche.json",
+  },
 };
 
 async function updateLimits(service) {
-  const configUrl = `https://raw.githubusercontent.com/redstone-finance/redstone-oracles-monorepo/main/packages/oracle-node/manifests/data-services/${service}.json`;
-  const filename = `circuit-breaker-${service}-prod-${hiddenNames[service]}.json`;
+  // const latestPricesUrl = `https://d39kvikjv5e65a.cloudfront.net/data-packages/latest?data-service-id=redstone-${service}-prod&unique-signers-count=1&data-feeds=___ALL_FEEDS___`;
+  const latestPricesUrl = `https://oracle-gateway-1.a.redstone.finance/data-packages/latest/redstone-${service}-prod`;
+  const manifestUrl = hiddenNames[service].manifestUrl;
+  const filename = `circuit-breaker-${service}-prod-${hiddenNames[service].hash}.json`;
   try {
-    const response = await axios.get(configUrl);
+    const latestPricesResponse = await axios.get(latestPricesUrl);
+    const tokensPrices = getTokensPrices(latestPricesResponse.data);
+    const response = await axios.get(manifestUrl);
     const tokens = Object.keys(response.data["tokens"]);
-    const hardLimitsPromises = tokens.map(async (token) => {
+    let hardLimits = {};
+    for (const token of tokens) {
       const limitPercentage = getLimitPercentage(token);
-      return { [token]: await getHardLimits(token, limitPercentage) };
-    });
-    Promise.all(hardLimitsPromises).then((results) => {
-      const hardLimits = results.reduce(
-        (acc, curr) => ({ ...acc, ...curr }),
-        {}
-      );
-      saveToFile(filename, hardLimits);
-    });
+      hardLimits[token] = getHardLimits(token, tokensPrices, limitPercentage);
+    }
+    saveToFile(filename, hardLimits);
   } catch (error) {
     sendAlert(service, error);
   }
+}
+
+function getTokensPrices(latestPrices) {
+  let tokensPrices = [];
+  for (const currency in latestPrices) {
+    const currencyDataPoints = latestPrices[currency];
+    if (currency === "___ALL_FEEDS___") continue;
+    const currencyPrice = currencyDataPoints[0].dataPoints[0].value;
+    tokensPrices.push({ token: currency, value: currencyPrice });
+  }
+  return tokensPrices;
 }
 
 function getLimitPercentage(token) {
@@ -43,19 +61,26 @@ function getLimitPercentage(token) {
   } else if (normalTokens.includes(token)) {
     return normalTokensLimitPercentage;
   } else {
-    throw new Error("Unknown token", token);
+    throw new Error("Unknown token, add to constants", token);
   }
 }
 
-async function getHardLimits(token, limitPercentage) {
-  const latestValue = await fetchLatestValueForToken(token);
+function getHardLimits(token, tokensPrices, limitPercentage) {
+  const latestValue = getLatestValueForToken(token, tokensPrices);
   return calculateLimits(latestValue, limitPercentage);
 }
 
-async function fetchLatestValueForToken(token) {
-  //TODO: fetch the latest value from the redstone oracle.
-  // A dummy value.
-  return 2000;
+function getLatestValueForToken(token, tokensPrices) {
+  const tokenPrice = tokensPrices.find(
+    (tokenPrice) => tokenPrice.token === token
+  );
+  if (tokenPrice) return tokenPrice.value;
+  else {
+    // TODO: add missing tokens pricing, remove this and uncomment the throw error line
+    console.log("Token price not found", token);
+    return 0;
+  }
+  // else throw new Error("Token price not found", token);
 }
 
 function calculateLimits(latestValue, limitPercentage) {

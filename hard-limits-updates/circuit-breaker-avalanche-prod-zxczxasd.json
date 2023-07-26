@@ -1,218 +1,218 @@
 {
   "ETH": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 927.9,
+    "upper": 2783.7
   },
   "USDT": {
-    "lower": 1960,
-    "upper": 2040
+    "lower": 0.98,
+    "upper": 1.02
   },
   "PNG": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 0.0120865,
+    "upper": 0.0362595
   },
   "AVAX": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 6.615,
+    "upper": 19.845
   },
   "LINK": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 3.7572,
+    "upper": 11.2716
   },
   "BTC": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 14617.36,
+    "upper": 43852.08
   },
   "QI": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 0.0030443288356176022,
+    "upper": 0.009132986506852807
   },
   "USDC": {
-    "lower": 1960,
-    "upper": 2040
+    "lower": 0.9800111135558477,
+    "upper": 1.0200115671703722
   },
   "sAVAX": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 7.248960005,
+    "upper": 21.746880015
   },
   "PTP": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 0.00975880579629,
+    "upper": 0.029276417388869998
   },
   "YY_AAVE_AVAX": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 6.962151984380355,
+    "upper": 20.886455953141066
   },
   "YY_PTP_sAVAX": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 7.703242244277832,
+    "upper": 23.109726732833497
   },
   "PNG_AVAX_USDC_LP": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 4466621.599383837,
+    "upper": 13399864.79815151
   },
   "PNG_AVAX_USDT_LP": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 4472254.245721427,
+    "upper": 13416762.737164281
   },
   "PNG_AVAX_ETH_LP": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 188.84424240604477,
+    "upper": 566.5327272181344
   },
   "TJ_AVAX_USDC_LP": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 5227166.008743651,
+    "upper": 15681498.026230954
   },
   "TJ_AVAX_USDT_LP": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 4876552.778553581,
+    "upper": 14629658.335660743
   },
   "TJ_AVAX_ETH_LP": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 191.26607691143343,
+    "upper": 573.7982307343003
   },
   "TJ_AVAX_BTC_LP": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 65701846.295863315,
+    "upper": 197105538.88758993
   },
   "TJ_AVAX_sAVAX_LP": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 14.081759584606985,
+    "upper": 42.245278753820955
   },
   "MOO_TJ_AVAX_USDC_LP": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 5980489.878931122,
+    "upper": 17941469.636793368
   },
   "YY_PNG_AVAX_USDC_LP": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 5240242.506942369,
+    "upper": 15720727.520827107
   },
   "YY_PNG_AVAX_ETH_LP": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 214.33741282685094,
+    "upper": 643.0122384805528
   },
   "YY_TJ_AVAX_sAVAX_LP": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 15.211484972680394,
+    "upper": 45.63445491804118
   },
   "YY_TJ_AVAX_USDC_LP": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 5759339.360164094,
+    "upper": 17278018.08049228
   },
   "YY_TJ_AVAX_ETH_LP": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 204.72937345612604,
+    "upper": 614.1881203683781
   },
   "XAVA": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 0.0977599475,
+    "upper": 0.2932798425
   },
   "YYAV3SA1": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 6.962151984380355,
+    "upper": 20.886455953141066
   },
   "GMX": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 26.96615350228695,
+    "upper": 80.89846050686086
   },
   "GLP": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 0.38887742914759177,
+    "upper": 1.1666322874427753
   },
   "JOE": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 0.165545,
+    "upper": 0.496635
   },
   "BUSD": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 0.499995,
+    "upper": 1.4999850000000001
   },
   "YY_GLP": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 0.5189816638712835,
+    "upper": 1.5569449916138507
   },
   "DAI": {
-    "lower": 1960,
-    "upper": 2040
+    "lower": 0.9799412000000001,
+    "upper": 1.0199388
   },
   "SHLB_AVAX-USDC_B": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 11.17226660704487,
+    "upper": 33.51679982113461
   },
   "SHLB_BTC.b-AVAX_B": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 14.213381406962945,
+    "upper": 42.640144220888835
   },
   "SHLB_USDT.e-USDt_C": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 1084913624234.4796,
+    "upper": 3254740872703.439
   },
   "SHLB_JOE-AVAX_B": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 0.14297637868111052,
+    "upper": 0.42892913604333155
   },
   "USDT.e": {
-    "lower": 1960,
-    "upper": 2040
+    "lower": 0.9787882285219346,
+    "upper": 1.0187387684616054
   },
   "SOFR": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 2.525,
+    "upper": 7.574999999999999
   },
   "SOFR_EFFECTIVE_DATE": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 845100000,
+    "upper": 2535300000
   },
   "SOFRAI": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 0.544550045,
+    "upper": 1.6336501350000001
   },
   "SOFRAI_EFFECTIVE_DATE": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 845143200,
+    "upper": 2535429600
   },
   "gmdUSDC": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 0.5368333538230461,
+    "upper": 1.6105000614691383
   },
   "gmdAVAX": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 7.031369187939636,
+    "upper": 21.09410756381891
   },
   "gmdBTC": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 15528.671431999048,
+    "upper": 46586.01429599714
   },
   "gmdETH": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 984.833801671094,
+    "upper": 2954.501405013282
   },
   "EUROC": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 0.552635042513725,
+    "upper": 1.657905127541175
   },
   "SHLB_EUROC-USDC_V2_1_B": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 994833249819.4352,
+    "upper": 2984499749458.3057
   },
   "TJ_AVAX_USDC_AUTO": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 0.3846233219087806,
+    "upper": 1.1538699657263418
   },
   "CRV": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 0.3621,
+    "upper": 1.0863
   },
   "crvUSDBTCETH": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 335.7876572204989,
+    "upper": 1007.3629716614967
   },
   "IB01.L": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 0,
+    "upper": 0
   },
   "SHLB_GMX-AVAX_B": {
-    "lower": 1000,
-    "upper": 3000
+    "lower": 0,
+    "upper": 0
   }
 }
