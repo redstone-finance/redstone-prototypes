@@ -92,7 +92,7 @@ export const prodDetails: ProdDetails = {
     hash: "xasdqwr",
     manifestName: "redstone-primary-prod-node-1",
     fallbackManifestUrl:
-      "https://raw.githubusercontent.com/redstone-finance/redstone-oracles-monorepo/f4ab23f92b2e65fade1233214b57ba1ee0ca7e3f/packages/oracle-node/manifests/data-services/primary.json",
+      "https://raw.githubusercontent.com/redstone-finance/redstone-oracles-monorepo/main/packages/oracle-node/manifests/data-services/primary.json",
   },
   avalanche: {
     hash: "zxczxasd",
@@ -101,6 +101,3 @@ export const prodDetails: ProdDetails = {
       "https://raw.githubusercontent.com/redstone-finance/redstone-oracles-monorepo/main/packages/oracle-node/manifests/data-services/avalanche.json",
   },
 };
-
-export const configUrl: string =
-  "https://raw.githubusercontent.com/redstone-finance/remote-config/main/monitoring-remote-config-a51m53ue.json";

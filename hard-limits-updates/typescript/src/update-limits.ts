@@ -1,5 +1,6 @@
 import axios from "axios";
 import fs from "fs";
+import path from "path";
 import dotenv from "dotenv";
 import {
   stableCoins,
@@ -7,12 +8,19 @@ import {
   stableCoinsLimitPercentage,
   normalTokensLimitPercentage,
   prodDetails,
-  configUrl,
 } from "./constants";
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const alertUrl: string = process.env.ALERT_URL || "";
-const githubAccessToken: string = process.env.GITHUB_ACCESS_TOKEN || "";
+const configFilePath = path.resolve(
+  __dirname,
+  "../../monitoring-remote-config-a51m53ue.json"
+);
+
+interface Boundaries {
+  lower: number;
+  upper: number;
+}
 
 interface TokenPrice {
   token: string;
@@ -20,13 +28,10 @@ interface TokenPrice {
 }
 
 interface HardLimits {
-  [token: string]: {
-    lower: number;
-    upper: number;
-  };
+  [token: string]: Boundaries;
 }
 
-interface ConfigResponse {
+interface ConfigFile {
   defaultConfig: {
     apiProviders: {
       [service: string]: {
@@ -60,17 +65,12 @@ async function updateLimits(service: string) {
 }
 
 async function getManifestUrlFromConfig(service: string): Promise<string> {
-  const config = {
-    headers: {
-      Authorization: `Bearer ${githubAccessToken}`,
-    },
-  };
   try {
-    const response = await axios.get<ConfigResponse>(configUrl, config);
+    const config = fs.readFileSync(configFilePath, "utf-8");
+    const parsedConfig: ConfigFile = JSON.parse(config);
     const manifestUrl =
-      response.data.defaultConfig.apiProviders[
-        prodDetails[service].manifestName
-      ]?.manifestUrl;
+      parsedConfig.defaultConfig.apiProviders[prodDetails[service].manifestName]
+        ?.manifestUrl;
     return manifestUrl || prodDetails[service].fallbackManifestUrl;
   } catch (error) {
     sendAlert(service, error);
@@ -103,7 +103,7 @@ function getHardLimits(
   token: string,
   tokensPrices: TokenPrice[],
   limitPercentage: number
-): { lower: number; upper: number } {
+): Boundaries {
   const latestValue = getLatestValueForToken(token, tokensPrices);
   return calculateLimits(latestValue, limitPercentage);
 }
@@ -127,7 +127,7 @@ function getLatestValueForToken(
 function calculateLimits(
   latestValue: number,
   limitPercentage: number
-): { lower: number; upper: number } {
+): Boundaries {
   const lower = latestValue * (1 - limitPercentage);
   const upper = latestValue * (1 + limitPercentage);
   return { lower, upper };
