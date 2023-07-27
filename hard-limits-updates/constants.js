@@ -71,9 +71,28 @@ const normalTokens = [
 const stableCoinsLimitPercentage = 0.02; // 2%
 const normalTokensLimitPercentage = 0.5; // 50%
 
+const prodDetails = {
+  primary: {
+    hash: "xasdqwr",
+    manifestName: "redstone-primary-prod-node-1",
+    fallbackManifestUrl:
+      "https://raw.githubusercontent.com/redstone-finance/redstone-oracles-monorepo/f4ab23f92b2e65fade1233214b57ba1ee0ca7e3f/packages/oracle-node/manifests/data-services/primary.json",
+  },
+  avalanche: {
+    hash: "zxczxasd",
+    manifestName: "redstone-avalanche-prod",
+    fallbackManifestUrl:
+      "https://raw.githubusercontent.com/redstone-finance/redstone-oracles-monorepo/main/packages/oracle-node/manifests/data-services/avalanche.json",
+  },
+};
+
+const configUrl = "https://raw.githubusercontent.com/redstone-finance/remote-config/main/monitoring-remote-config-a51m53ue.json";
+
 module.exports = {
   stableCoins,
   normalTokens,
   stableCoinsLimitPercentage,
   normalTokensLimitPercentage,
+  prodDetails,
+  configUrl,
 };

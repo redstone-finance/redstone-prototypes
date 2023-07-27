@@ -6,28 +6,17 @@ const {
   normalTokens,
   stableCoinsLimitPercentage,
   normalTokensLimitPercentage,
+  prodDetails,
+  configUrl,
 } = require("./constants.js");
 dotenv.config();
 const alertUrl = process.env.ALERT_URL;
-
-const hiddenNames = {
-  primary: {
-    hash: "xasdqwr",
-    manifestUrl:
-      "https://raw.githubusercontent.com/redstone-finance/redstone-oracles-monorepo/f4ab23f92b2e65fade1233214b57ba1ee0ca7e3f/packages/oracle-node/manifests/data-services/primary.json",
-  },
-  avalanche: {
-    hash: "zxczxasd",
-    manifestUrl:
-      "https://raw.githubusercontent.com/redstone-finance/redstone-oracles-monorepo/main/packages/oracle-node/manifests/data-services/avalanche.json",
-  },
-};
+const githubAccessToken = process.env.GITHUB_ACCESS_TOKEN;
 
 async function updateLimits(service) {
-  // const latestPricesUrl = `https://d39kvikjv5e65a.cloudfront.net/data-packages/latest?data-service-id=redstone-${service}-prod&unique-signers-count=1&data-feeds=___ALL_FEEDS___`;
   const latestPricesUrl = `https://oracle-gateway-1.a.redstone.finance/data-packages/latest/redstone-${service}-prod`;
-  const manifestUrl = hiddenNames[service].manifestUrl;
-  const filename = `circuit-breaker-${service}-prod-${hiddenNames[service].hash}.json`;
+  const manifestUrl = await getManifestUrlFromConfig(service);
+  const filename = `circuit-breaker-${service}-prod-${prodDetails[service].hash}.json`;
   try {
     const latestPricesResponse = await axios.get(latestPricesUrl);
     const tokensPrices = getTokensPrices(latestPricesResponse.data);
@@ -38,9 +27,29 @@ async function updateLimits(service) {
       const limitPercentage = getLimitPercentage(token);
       hardLimits[token] = getHardLimits(token, tokensPrices, limitPercentage);
     }
+    hardLimits = sortAlphabetically(hardLimits); // for easier diff
     saveToFile(filename, hardLimits);
   } catch (error) {
     sendAlert(service, error);
+  }
+}
+
+async function getManifestUrlFromConfig(service) {
+  const config = {
+    headers: {
+      Authorization: `Bearer ${githubAccessToken}`,
+    },
+  };
+  try {
+    const response = await axios.get(configUrl, config);
+    const manifestUrl =
+      response.data.defaultConfig.apiProviders[
+        prodDetails[service].manifestName
+      ].manifestUrl;
+    return manifestUrl || prodDetails[service].fallbackManifestUrl;
+  } catch (error) {
+    sendAlert(service, error);
+    return prodDetails[service].fallbackManifestUrl;
   }
 }
 
@@ -87,6 +96,16 @@ function calculateLimits(latestValue, limitPercentage) {
   const lower = latestValue * (1 - limitPercentage);
   const upper = latestValue * (1 + limitPercentage);
   return { lower, upper };
+}
+
+function sortAlphabetically(hardLimits) {
+  const sorted = {};
+  Object.keys(hardLimits)
+    .sort()
+    .forEach(function (key) {
+      sorted[key] = hardLimits[key];
+    });
+  return sorted;
 }
 
 function saveToFile(filename, hardLimits) {
