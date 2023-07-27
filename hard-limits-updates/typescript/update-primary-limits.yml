@@ -21,7 +21,7 @@ jobs:
         run: npm install
 
       - name: Update Hard Limits - Primary Prod
-        run: npm run update-limits -- --service primary
+        run: npm run update-limits --service primary
 
       - name: Commit and Push Changes
         run: |

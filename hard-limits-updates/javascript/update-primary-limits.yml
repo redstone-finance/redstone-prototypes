@@ -1,4 +1,4 @@
-name: Update Limits - Avalanche Prod
+name: Update Limits - Primary Prod
 
 on:
   schedule:
@@ -20,8 +20,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Update Hard Limits - Avalanche Prod
-        run: npm run update-limits -- --service avalanche
+      - name: Update Hard Limits - Primary Prod
+        run: npm run update-limits --service primary
 
       - name: Commit and Push Changes
         run: |
