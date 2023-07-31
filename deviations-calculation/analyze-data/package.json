@@ -1,0 +1,8 @@
+{
+  "name": "analyze_deviations",
+  "version": "1.0.0",
+  "dependencies": {
+    "@nestjs/mongoose": "^9.2.0",
+    "mongoose": "^6.5.2"
+  }
+}
