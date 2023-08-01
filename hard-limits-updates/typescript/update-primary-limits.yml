@@ -7,6 +7,13 @@ on:
 jobs:
   update-limits:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: typescript
+
+    env:
+      # Define the required environment variables as GitHub Actions secrets
+      ALERT_URL: ${{ secrets.ALERT_URL }}
 
     steps:
       - name: Checkout repository
@@ -27,6 +34,6 @@ jobs:
         run: |
           git config --local user.email "actions@github.com"
           git config --local user.name "GitHub Actions"
-          git add -A
-          git commit -m "Automated update of hard limits"
-          git push
+          git add circuit-breaker-primary-prod-xasdqwr.json
+          git commit -m "Automated update of primary-prod hard limits"
+          git push origin main

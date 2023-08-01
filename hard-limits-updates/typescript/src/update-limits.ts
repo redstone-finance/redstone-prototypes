@@ -1,7 +1,5 @@
 import axios from "axios";
 import fs from "fs";
-import path from "path";
-import dotenv from "dotenv";
 import {
   stableCoins,
   normalTokens,
@@ -10,12 +8,8 @@ import {
   prodDetails,
 } from "./constants";
 
-dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const alertUrl: string = process.env.ALERT_URL || "";
-const configFilePath = path.resolve(
-  __dirname,
-  "../../monitoring-remote-config-a51m53ue.json"
-);
+const parsedConfig: ConfigFile = require("../../monitoring-remote-config-a51m53ue.json");
 
 interface Boundaries {
   lower: number;
@@ -51,7 +45,9 @@ async function updateLimits(service: string) {
       latestPricesResponse.data
     );
     const response = await axios.get<any>(manifestUrl);
-    const tokens: string[] = Object.keys(response.data["tokens"]);
+    const tokens: string[] = Object.keys(response.data["tokens"]).filter(
+      (token) => !response.data["tokens"][token].skipSigning
+    );
     let hardLimits: HardLimits = {};
     for (const token of tokens) {
       const limitPercentage: number = getLimitPercentage(token);
@@ -66,8 +62,6 @@ async function updateLimits(service: string) {
 
 async function getManifestUrlFromConfig(service: string): Promise<string> {
   try {
-    const config = fs.readFileSync(configFilePath, "utf-8");
-    const parsedConfig: ConfigFile = JSON.parse(config);
     const manifestUrl =
       parsedConfig.defaultConfig.apiProviders[prodDetails[service].manifestName]
         ?.manifestUrl;
@@ -115,13 +109,11 @@ function getLatestValueForToken(
   const tokenPrice = tokensPrices.find(
     (tokenPrice) => tokenPrice.token === token
   );
-  if (tokenPrice) return tokenPrice.value;
-  else {
-    // TODO: add missing tokens pricing, remove this and uncomment the throw error line
-    console.log("Token price not found", token);
-    return 0;
+  if (tokenPrice) {
+    return tokenPrice.value;
+  } else {
+    throw new Error("Token price not found: " + token);
   }
-  // else throw new Error("Token price not found: " + token);
 }
 
 function calculateLimits(
