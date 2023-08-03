@@ -8,20 +8,20 @@ import "dotenv/config";
 const mongoDbUrl = process.env.MONGO_DB_URL || "";
 
 // USAGE: ts-node analyze-data-packages.ts
-//FIXME: probably because of tsconfig or package json ocurred after installing
+// FIXME: probably because of tsconfig or package json error ocurred after installing
 // "redstone-oracles-monorepo": "github:redstone-finance/redstone-oracles-monorepo" as dependency in 2nd line
 // Warning: To load an ES module, set "type": "module" in the package.json or use the .mjs extension.
 // OR: analyze-data/node_modules/redstone-oracles-monorepo/packages/utils/src/math/index.ts:1
 // import Decimal from "decimal.js";
 // SyntaxError: Cannot use import statement outside a module
 
-const symbol = "DAI";
-const periodInDays = 5;
-main(symbol, periodInDays);
-
+const symbol = "LINK";
+const periodInDays = 0.1;
 const THRESHOLDS = [1, 0.5, 0.2, 0.1]; // in percent
 const DATA_SERVICE_ID = "redstone-avalanche-prod";
 const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
+
+main(symbol, periodInDays);
 
 interface DataPackagesGroupedBySigner {
   [signer: string]: CachedDataPackage[];
@@ -275,3 +275,13 @@ function handleDeviationsCalculationsFromApi(
     );
   }
 }
+
+// function calculateDeviationPercent({
+//   prevValue,
+//   newValue,
+// }: {
+//   prevValue: number | string;
+//   newValue: number | string;
+// }): number {
+//   return 0;
+// }
