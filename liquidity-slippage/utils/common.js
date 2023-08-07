@@ -3,7 +3,6 @@ const redstone = require("redstone-api");
 const dotenv = require("dotenv");
 const path = require("path");
 const axios = require("axios");
-const { get } = require("http");
 const constants = require("../utils/constants");
 const { appendToCSV } = require("../utils/csv-utils");
 
@@ -23,17 +22,17 @@ async function getPriceFromCoingecko(name) {
 }
 
 async function getPrice(crypto) {
+  // try {
+  //   const price = await redstone.getPrice(crypto.symbol);
+  //   return price.value;
+  // } catch (error) {
   try {
-    const price = await redstone.getPrice(crypto.symbol);
-    return price.value;
+    const price = await getPriceFromCoingecko(crypto.name);
+    return price;
   } catch (error) {
-    try {
-      const price = await getPriceFromCoingecko(crypto.name);
-      return price;
-    } catch (error) {
-      console.log(`Price for ${crypto.symbol} not found`, error);
-    }
+    console.log(`Price for ${crypto.symbol} not found`, error);
   }
+  // }
 }
 
 async function calculatePoolSize(token0Amount, token1Amount, token0, token1) {
