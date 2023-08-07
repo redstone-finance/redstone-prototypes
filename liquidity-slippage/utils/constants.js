@@ -335,6 +335,30 @@ const constants = {
     address: "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
     decimals: 18,
   },
+  FRAX: {
+    symbol: "FRAX",
+    name: "frax",
+    address: "0x853d955aCEf822Db058eb8505911ED77F175b99e",
+    decimals: 18,
+  },
+  VST: {
+    symbol: "VST",
+    name: "vesta-stable",
+    address: "0x64343594ab9b56e99087bfa6f2335db24c2d1f17",
+    decimals: 18,
+  },
+  crvUSD: {
+    symbol: "crvUSD",
+    name: "crvusd",
+    address: "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E",
+    decimals: 18,
+  },
+  FRXETH: {
+    symbol: "FRXETH",
+    name: "frax-ether",
+    address: "0x5e8422345238f34275888049021821e8e08caa1f",
+    decimals: 18,
+  },
 
   pricesUnrelated: [1e4, 1e6, 1e8],
   pricesRelated: [1e-3, 1e-2, 1e-1],
