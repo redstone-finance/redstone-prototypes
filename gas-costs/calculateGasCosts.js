@@ -2,7 +2,6 @@ const axios = require("axios");
 const dotenv = require("dotenv");
 const redstone = require("redstone-api");
 const contracts = require("./contracts.json");
-const { parse } = require("dotenv");
 
 dotenv.config();
 
@@ -10,8 +9,16 @@ const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
 const ARBISCAN_API_KEY = process.env.ARBISCAN_API_KEY;
 
 const blockchainExplorerMap = {
-  ethereum: { explorer: "etherscan.io", apiKey: ETHERSCAN_API_KEY },
-  arbitrum: { explorer: "arbiscan.io", apiKey: ARBISCAN_API_KEY },
+  ethereum: {
+    explorer: "etherscan.io",
+    apiKey: ETHERSCAN_API_KEY,
+    implicitGasPrice: 0,
+  },
+  arbitrum: {
+    explorer: "arbiscan.io",
+    apiKey: ARBISCAN_API_KEY,
+    implicitGasPrice: 1e8,
+  },
 };
 
 const getExactEthPrices = false; // Set to true to get exact ETH prices for each transaction
@@ -49,8 +56,11 @@ async function cumulativeGasCost(contractName) {
     return;
   }
   const { address, network } = contract;
-  const { explorer: blockchainExplorer, apiKey: API_KEY } =
-    blockchainExplorerMap[network];
+  const {
+    explorer: blockchainExplorer,
+    apiKey: API_KEY,
+    implicitGasPrice,
+  } = blockchainExplorerMap[network];
   const apiUrl = `https://api.${blockchainExplorer}/api?module=account&action=txlist&address=${address}&apikey=${API_KEY}`;
 
   try {
@@ -58,7 +68,7 @@ async function cumulativeGasCost(contractName) {
     const transactions = response.data.result;
     const ethPrices = await getEthPrices(transactions);
     const [transactionsByMonth, cumulativeGasCostETH, cumulativeGasCostUSD] =
-      calculateGasCostPerMonth(transactions, ethPrices);
+      calculateGasCostPerMonth(transactions, ethPrices, implicitGasPrice);
     displayResults(
       transactions,
       cumulativeGasCostETH,
@@ -86,7 +96,7 @@ function higherGasPrice(tx) {
   }
 }
 
-function calculateGasCostPerMonth(transactions, ethPrices) {
+function calculateGasCostPerMonth(transactions, ethPrices, implicitGasPrice) {
   const transactionsByMonth = {};
   let cumulativeGasCostETH = 0;
   let cumulativeGasCostUSD = 0;
@@ -95,7 +105,7 @@ function calculateGasCostPerMonth(transactions, ethPrices) {
     // printTransaction(tx); // Uncomment to print transaction details
     // higherGasPrice(tx); // Uncomment to check if gas price is higher than 1e8
     const gasUsed = parseInt(tx.gasUsed);
-    const gasPrice = parseInt(tx.gasPrice); // 1e8 starting on Arbitrum One
+    const gasPrice = implicitGasPrice || parseInt(tx.gasPrice); // Use implicit gas price if it's provided (not 0)
     const gasCost = (gasUsed * gasPrice) / 1e18; // Gas costs are in Wei, so divide by 1e18 to convert to ETH
     cumulativeGasCostETH += gasCost;
     cumulativeGasCostUSD += gasCost * ethPrices[i];
