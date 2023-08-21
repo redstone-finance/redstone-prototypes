@@ -6,19 +6,41 @@ const {
   calculatePoolSize,
   calcPricesInEachOther,
   calculateAndWriteToCSV,
+  amountTradeXSlippage,
 } = require("../utils/common");
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
-cryptoASymbol = "WETH";
-cryptoBSymbol = "SNX";
+const pairs = [
+  {
+    cryptoASymbol: "USDT",
+    cryptoBSymbol: "WETH",
+  },
+  {
+    cryptoASymbol: "COMP",
+    cryptoBSymbol: "WETH",
+  },
+  {
+    cryptoASymbol: "SUSHI",
+    cryptoBSymbol: "WETH",
+  },
+  {
+    cryptoASymbol: "ILV",
+    cryptoBSymbol: "WETH",
+  },
+  {
+    cryptoASymbol: "SNX",
+    cryptoBSymbol: "WETH",
+  },
+];
+
+const { cryptoASymbol, cryptoBSymbol } = pairs[4];
+const cryptoA = constants[cryptoASymbol];
+const cryptoB = constants[cryptoBSymbol];
 
 const fee = 3000;
 const gasFee = fee / 1e6;
-
-const cryptoA = constants[cryptoASymbol];
-const cryptoB = constants[cryptoBSymbol];
 
 const provider = new ethers.providers.JsonRpcProvider(
   `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`
@@ -80,7 +102,18 @@ async function calculateSlippage(fromCrypto, toCrypto) {
   const [poolSize, firstPriceInSecond, secondPriceInFirst] =
     await getPricesInEachOther(fromCrypto, toCrypto);
 
-  calculateAndWriteToCSV(
+  // calculateAndWriteToCSV(
+  //   DEX,
+  //   fromCrypto,
+  //   toCrypto,
+  //   poolSize,
+  //   secondPriceInFirst,
+  //   firstPriceInSecond,
+  //   gasFee,
+  //   getOutAmount,
+  //   contract
+  // );
+  amountTradeXSlippage(
     DEX,
     fromCrypto,
     toCrypto,

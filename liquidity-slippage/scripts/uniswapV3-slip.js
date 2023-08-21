@@ -5,6 +5,7 @@ const constants = require("../utils/constants");
 const {
   getApproximateTokensAmountInPool,
   calculateAndWriteToCSV,
+  amountTradeXSlippage,
   reversePrice,
 } = require("../utils/common");
 
@@ -13,8 +14,30 @@ const DEX = "Uniswap V3";
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
-cryptoASymbol = "WBTC";
-cryptoBSymbol = "WETH";
+const pairs = [
+  {
+    cryptoASymbol: "USDC",
+    cryptoBSymbol: "WETH",
+  },
+  {
+    cryptoASymbol: "USDT",
+    cryptoBSymbol: "USDC",
+  },
+  {
+    cryptoASymbol: "UNI",
+    cryptoBSymbol: "WETH",
+  },
+  {
+    cryptoASymbol: "RLB",
+    cryptoBSymbol: "WETH",
+  },
+  {
+    cryptoASymbol: "WBTC",
+    cryptoBSymbol: "USDC",
+  },
+];
+
+const { cryptoASymbol, cryptoBSymbol } = pairs[4];
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];
 
@@ -112,7 +135,18 @@ async function calculateSlippage(fromCrypto, toCrypto) {
     await getPricesInEachOther(fromCrypto, toCrypto);
   const gasFee = fee / 1e6;
 
-  calculateAndWriteToCSV(
+  // calculateAndWriteToCSV(
+  //   DEX,
+  //   fromCrypto,
+  //   toCrypto,
+  //   poolSize,
+  //   secondPriceInFirst,
+  //   firstPriceInSecond,
+  //   gasFee,
+  //   getOutAmount,
+  //   contract
+  // );
+  amountTradeXSlippage(
     DEX,
     fromCrypto,
     toCrypto,

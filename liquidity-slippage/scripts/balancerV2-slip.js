@@ -1,4 +1,4 @@
-//TODO: refactor balancer V2
+//TODO: refactor balancer V2 how to get amout out?!
 const ethers = require("ethers");
 const dotenv = require("dotenv");
 const path = require("path");
