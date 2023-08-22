@@ -359,6 +359,18 @@ const constants = {
     address: "0x5e8422345238f34275888049021821e8e08caa1f",
     decimals: 18,
   },
+  swETH: {
+    symbol: "swETH",
+    name: "sweth",
+    address: "0xf951e335afb289353dc249e82926178eac7ded78",
+    decimals: 18,
+  },
+  GHO: {
+    symbol: "GHO",
+    name: "gho",
+    address: "0x40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f",
+    decimals: 18,
+  },
 
   pricesUnrelated: [1e4, 1e6, 1e8],
   pricesRelated: [1e-3, 1e-2, 1e-1],

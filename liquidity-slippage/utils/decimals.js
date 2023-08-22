@@ -10,7 +10,7 @@ const provider = new ethers.providers.JsonRpcProvider(
 );
 
 // Replace with your crypto address
-const cryptoAddress = "0x5e8422345238f34275888049021821e8e08caa1f";
+const cryptoAddress = "0xf951e335afb289353dc249e82926178eac7ded78";
 
 async function getDecimals() {
   const contract = new ethers.Contract(

@@ -18,26 +18,33 @@ const pairs = [
   {
     cryptoASymbol: "USDC",
     cryptoBSymbol: "WETH",
+    fee: 0, // 0 if not specified
   },
   {
     cryptoASymbol: "USDT",
     cryptoBSymbol: "USDC",
+    fee: 500, // 0 if not specified
   },
   {
     cryptoASymbol: "UNI",
     cryptoBSymbol: "WETH",
+    fee: 3000,
   },
   {
     cryptoASymbol: "RLB",
     cryptoBSymbol: "WETH",
+    fee: 0, // 0 if not specified
   },
   {
     cryptoASymbol: "WBTC",
     cryptoBSymbol: "USDC",
+    fee: 0, // 0 if not specified
   },
 ];
 
-const { cryptoASymbol, cryptoBSymbol } = pairs[4];
+const { cryptoASymbol, cryptoBSymbol, fee: givenFee } = pairs[1];
+let fee = givenFee;
+
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];
 
@@ -54,7 +61,6 @@ const poolAbi = [
 ];
 const contract = new ethers.Contract(address, abi, provider);
 
-let fee = 500;
 const factoryAddress = "0x1F98431c8aD98523631AE4a59f267346ea31F984"; // Uniswap V3 Factory address
 const poolFees = [500, 3000, 10000];
 const factoryAbi = [
@@ -66,6 +72,16 @@ async function findPoolAndFee(fromCrypto, toCrypto) {
     factoryAbi,
     provider
   );
+
+  if (fee) {
+    const poolAddress = await factoryContract.getPool(
+      fromCrypto.address,
+      toCrypto.address,
+      fee
+    );
+    return [poolAddress, fee];
+  }
+
   const poolAddresses = await Promise.all(
     poolFees.map((fee) =>
       factoryContract.getPool(fromCrypto.address, toCrypto.address, fee)

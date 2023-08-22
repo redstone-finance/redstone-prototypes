@@ -27,7 +27,7 @@ def generate_plots(df, current_script_directory):
 
     for dex in dex_list:
         dex_data = df[df['DEX'] == dex]
-        token_pairs = dex_data[['TokenA', 'TokenB']].drop_duplicates()
+        token_pairs = dex_data[['TokenA', 'TokenB']]
 
         plt.figure(figsize=(10, 6))
         plt.title(f"Slippage Analysis for DEX: {dex}")
