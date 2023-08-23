@@ -6,6 +6,8 @@ path = "../results/stepSlippage.csv"
 prices = [i/1000 for i in range(1, 1001)]
 prices[-1] = 1
 
+graphs = {}
+
 def read_data_from_csv(file_path):
     try:
         df = pd.read_csv(file_path)
@@ -14,8 +16,11 @@ def read_data_from_csv(file_path):
         print(f"File {file_path} not found.")
         return None
 
-def toggle_visibility(event, line):
-    line.set_visible(not line.get_visible())
+def on_pick(event):
+    legend = event.artist
+    isVisible = legend.get_visible()
+    graphs[legend].set_visible(not isVisible)
+    legend.set_visible(not isVisible)
     plt.draw()
 
 def generate_plots(df, current_script_directory):
@@ -35,7 +40,6 @@ def generate_plots(df, current_script_directory):
         plt.ylabel("Effective Slippage (%)")
 
         lines = []
-
         for index, row in token_pairs.iterrows():
             token_a = row['TokenA']
             token_b = row['TokenB']
@@ -48,21 +52,23 @@ def generate_plots(df, current_script_directory):
 
             line_buy, = plt.plot(prices, buy_slippages, label=f"Buy - {token_a}/{token_b}")
             line_sell, = plt.plot(prices, sell_slippages, label=f"Sell - {token_a}/{token_b}")
-            lines.append((line_buy, line_sell))
-
-            line_buy.set_picker(True) 
-            line_sell.set_picker(True) 
-
-            plt.legend()
-
-        # Toggle visibility of lines
-        plt.gcf().canvas.mpl_connect('pick_event', lambda event: toggle_visibility(event, event.artist))
+            
+            lines.append(line_buy)
+            lines.append(line_sell)
+            
+        legend = plt.legend()
+        for legline in legend.get_lines():
+            legline.set_picker(True)
+            legline.set_pickradius(10)
+            graphs[legline] = lines.pop(0)       
 
         plt.grid(True)
-        # plt.show()
-
         file_path = os.path.join(current_script_directory, f"results/slippage_chart_{dex}.png")
         plt.savefig(file_path)
+
+        plt.connect('pick_event', on_pick)
+        # plt.show() #! Uncomment this line to show the plot
+        
         plt.close()
 
 if __name__ == "__main__":
