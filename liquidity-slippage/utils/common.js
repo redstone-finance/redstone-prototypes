@@ -308,7 +308,7 @@ async function amountTradeXSlippage(
   getOutAmount,
   contract
 ) {
-  const prices = Array.from({ length: 1000 }, (_, i) => (i + 1) / 1000);
+  const prices = Array.from({ length: 2000 }, (_, i) => (i + 1) / 1000);
   const poolRelatedAmounts = stepAmount(poolSize, prices);
 
   const resultsDependent = await calculatePriceDifference(

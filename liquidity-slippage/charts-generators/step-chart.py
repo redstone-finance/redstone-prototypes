@@ -1,10 +1,11 @@
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
+import sys
 
-path = "../results/stepSlippage.csv"
-prices = [i/1000 for i in range(1, 1001)]
-prices[-1] = 1
+path = "../results/step2Slippage.csv"
+prices = [i/1000 for i in range(1, 2001)]
+prices = [int(i) if i.is_integer() else i for i in prices]
 
 graphs = {}
 
@@ -63,11 +64,12 @@ def generate_plots(df, current_script_directory):
             graphs[legline] = lines.pop(0)       
 
         plt.grid(True)
-        file_path = os.path.join(current_script_directory, f"results/slippage_chart_{dex}.png")
+        file_path = os.path.join(current_script_directory, f"results2/slippage_chart_{dex}.png")
         plt.savefig(file_path)
 
         plt.connect('pick_event', on_pick)
-        # plt.show() #! Uncomment this line to show the plot
+        if "-s" in sys.argv: 
+            plt.show()
         
         plt.close()
 

@@ -85,7 +85,7 @@ function appendToCSV(data) {
 }
 
 function stepToCSV(data, prices) {
-    const file = "../results/stepSlippage.csv";
+    const file = "../results/step2Slippage.csv";
     const filePath = path.join(currentScriptDirectory, file);
 
   const headers = [
