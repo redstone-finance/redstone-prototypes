@@ -123,18 +123,79 @@ async function callGetOutAmount(
   const fromAmount = Number(amountInUSD / tokenInPriceInUSD).toFixed(
     fromCrypto.decimals
   );
+
   const receivedSecondAmount = await getOutAmount(
     fromAmount,
     fromCrypto,
     toCrypto,
     contract
   );
+
   const expectedSecondAmount = (fromAmount / secondPriceInFirst) * (1 - gasFee);
   const differencePercentage = parseFloat(
     ((receivedSecondAmount - expectedSecondAmount) / expectedSecondAmount) * 100
   ).toFixed(2);
 
+  // console.log("SecondPriceInFirst", secondPriceInFirst);
+  // console.log("receivedSecondAmount", receivedSecondAmount);
+  // console.log("expectedSecondAmount", expectedSecondAmount);
+  // console.log("differencePercentage", differencePercentage);
+
   return differencePercentage;
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function slowCallGetOutAmount(
+  prices,
+  firstPriceInSecond,
+  secondPriceInFirst,
+  gasFee,
+  fromCrypto,
+  toCrypto,
+  getOutAmount,
+  contract,
+  firstPriceInUSD,
+  secondPriceInUSD
+) {
+  const resultPromises = [];
+  let counter = 0;
+
+  for (const price of prices) {
+    const slipAtoB = await callGetOutAmount(
+      price,
+      firstPriceInUSD,
+      secondPriceInFirst,
+      fromCrypto,
+      toCrypto,
+      gasFee,
+      contract,
+      getOutAmount
+    );
+
+    await delay(1500); // Delay to avoid rate limit
+
+    const slipBtoA = await callGetOutAmount(
+      price,
+      secondPriceInUSD,
+      firstPriceInSecond,
+      toCrypto,
+      fromCrypto,
+      gasFee,
+      contract,
+      getOutAmount
+    );
+
+    resultPromises.push([slipAtoB, slipBtoA]);
+
+    counter++;
+    if (counter % 5 === 0) console.log(`Fetched ${counter} prices`);
+    await delay(1500); // Delay to avoid rate limit
+  }
+
+  return resultPromises;
 }
 
 async function calculatePriceDifference(
@@ -149,30 +210,44 @@ async function calculatePriceDifference(
 ) {
   const firstPriceInUSD = await getPrice(fromCrypto);
   const secondPriceInUSD = await getPrice(toCrypto);
-  const resultPromises = prices.map(async (price) => {
-    const slipAtoB = callGetOutAmount(
-      price,
-      firstPriceInUSD,
-      secondPriceInFirst,
-      fromCrypto,
-      toCrypto,
-      gasFee,
-      contract,
-      getOutAmount
-    );
-    const slipBtoA = callGetOutAmount(
-      price,
-      secondPriceInUSD,
-      firstPriceInSecond,
-      toCrypto,
-      fromCrypto,
-      gasFee,
-      contract,
-      getOutAmount
-    );
-    const [resultAtoB, resultBtoA] = await Promise.all([slipAtoB, slipBtoA]);
-    return [resultAtoB, resultBtoA];
-  });
+
+  return await slowCallGetOutAmount(
+    prices,
+    firstPriceInSecond,
+    secondPriceInFirst,
+    gasFee,
+    fromCrypto,
+    toCrypto,
+    getOutAmount,
+    contract,
+    firstPriceInUSD,
+    secondPriceInUSD
+  );
+
+  // const resultPromises = prices.map(async (price) => {
+  //   const slipAtoB = callGetOutAmount(
+  //     price,
+  //     firstPriceInUSD,
+  //     secondPriceInFirst,
+  //     fromCrypto,
+  //     toCrypto,
+  //     gasFee,
+  //     contract,
+  //     getOutAmount
+  //   );
+  //   const slipBtoA = callGetOutAmount(
+  //     price,
+  //     secondPriceInUSD,
+  //     firstPriceInSecond,
+  //     toCrypto,
+  //     fromCrypto,
+  //     gasFee,
+  //     contract,
+  //     getOutAmount
+  //   );
+  //   const [resultAtoB, resultBtoA] = await Promise.all([slipAtoB, slipBtoA]);
+  //   return [resultAtoB, resultBtoA];
+  // });
 
   const results = await Promise.all(resultPromises);
   return results;

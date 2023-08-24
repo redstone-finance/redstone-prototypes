@@ -1,7 +1,6 @@
 const ethers = require("ethers");
 const dotenv = require("dotenv");
 const path = require("path");
-const redstone = require("redstone-api");
 const constants = require("../utils/constants");
 const {
   calculatePoolSize,
