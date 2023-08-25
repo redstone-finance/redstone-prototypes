@@ -163,6 +163,8 @@ async function slowCallGetOutAmount(
   const resultPromises = [];
   let counter = 0;
 
+  await delay(1500); // Delay to avoid rate limit
+
   for (const price of prices) {
     const slipAtoB = await callGetOutAmount(
       price,

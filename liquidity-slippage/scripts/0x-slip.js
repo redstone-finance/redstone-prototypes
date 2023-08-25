@@ -17,26 +17,36 @@ const addresses = [
   {
     cryptoASymbol: "DAI",
     cryptoBSymbol: "WETH",
+    poolSize: 1.3e8,
+    gasFee: 0.002,
   },
   {
     cryptoASymbol: "USDC",
     cryptoBSymbol: "USDT",
+    poolSize: 4.2e8,
+    gasFee: 0.001,
   },
   {
     cryptoASymbol: "UNI",
     cryptoBSymbol: "WETH",
+    poolSize: 2.9e7,
+    gasFee: 0.002,
   },
   {
     cryptoASymbol: "SUSHI",
     cryptoBSymbol: "DAI",
+    poolSize: 3.9e6,
+    gasFee: 0.0001,
   },
   {
     cryptoASymbol: "SNX",
     cryptoBSymbol: "WETH",
+    poolSize: 4e6,
+    gasFee: 0.004,
   },
 ];
 
-const { cryptoASymbol, cryptoBSymbol } = addresses[0];
+const { cryptoASymbol, cryptoBSymbol, poolSize, gasFee } = addresses[0];
 
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];
@@ -113,15 +123,14 @@ async function getPricesInEachOther(fromCrypto, toCrypto) {
     fromCrypto.decimals
   );
 
-  const poolSize = 4e8; // TODO: Sum of all pools in sources[]
-
-  return [poolSize, firstPriceInSecond, secondPriceInFirst];
+  return [firstPriceInSecond, secondPriceInFirst];
 }
 
 async function calculateSlippage(fromCrypto, toCrypto) {
-  const [poolSize, firstPriceInSecond, secondPriceInFirst] =
-    await getPricesInEachOther(fromCrypto, toCrypto);
-  const gasFee = 0; // Skip gas fee for now
+  const [firstPriceInSecond, secondPriceInFirst] = await getPricesInEachOther(
+    fromCrypto,
+    toCrypto
+  );
   const contract = "0x"; // Just for compatibility with other DEXs
 
   //   console.log(firstPriceInSecond, secondPriceInFirst);
