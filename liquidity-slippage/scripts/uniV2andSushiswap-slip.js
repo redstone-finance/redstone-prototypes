@@ -35,7 +35,7 @@ const pairs = [
   },
 ];
 
-const { cryptoASymbol, cryptoBSymbol } = pairs[4];
+const { cryptoASymbol, cryptoBSymbol } = pairs[0];
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];
 

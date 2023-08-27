@@ -177,7 +177,7 @@ async function slowCallGetOutAmount(
       getOutAmount
     );
 
-    await delay(1500); // Delay to avoid rate limit
+    await delay(2000); // Delay to avoid rate limit
 
     const slipBtoA = await callGetOutAmount(
       price,
@@ -193,8 +193,8 @@ async function slowCallGetOutAmount(
     resultPromises.push([slipAtoB, slipBtoA]);
 
     counter++;
-    if (counter % 5 === 0) console.log(`Fetched ${counter} prices`);
-    await delay(1500); // Delay to avoid rate limit
+    if (counter % 10 === 0) console.log(`Fetched ${counter} prices`);
+    await delay(2000); // Delay to avoid rate limit
   }
 
   return resultPromises;
@@ -213,43 +213,43 @@ async function calculatePriceDifference(
   const firstPriceInUSD = await getPrice(fromCrypto);
   const secondPriceInUSD = await getPrice(toCrypto);
 
-  return await slowCallGetOutAmount(
-    prices,
-    firstPriceInSecond,
-    secondPriceInFirst,
-    gasFee,
-    fromCrypto,
-    toCrypto,
-    getOutAmount,
-    contract,
-    firstPriceInUSD,
-    secondPriceInUSD
-  );
+  // return await slowCallGetOutAmount(
+  //   prices,
+  //   firstPriceInSecond,
+  //   secondPriceInFirst,
+  //   gasFee,
+  //   fromCrypto,
+  //   toCrypto,
+  //   getOutAmount,
+  //   contract,
+  //   firstPriceInUSD,
+  //   secondPriceInUSD
+  // );
 
-  // const resultPromises = prices.map(async (price) => {
-  //   const slipAtoB = callGetOutAmount(
-  //     price,
-  //     firstPriceInUSD,
-  //     secondPriceInFirst,
-  //     fromCrypto,
-  //     toCrypto,
-  //     gasFee,
-  //     contract,
-  //     getOutAmount
-  //   );
-  //   const slipBtoA = callGetOutAmount(
-  //     price,
-  //     secondPriceInUSD,
-  //     firstPriceInSecond,
-  //     toCrypto,
-  //     fromCrypto,
-  //     gasFee,
-  //     contract,
-  //     getOutAmount
-  //   );
-  //   const [resultAtoB, resultBtoA] = await Promise.all([slipAtoB, slipBtoA]);
-  //   return [resultAtoB, resultBtoA];
-  // });
+  const resultPromises = prices.map(async (price) => {
+    const slipAtoB = callGetOutAmount(
+      price,
+      firstPriceInUSD,
+      secondPriceInFirst,
+      fromCrypto,
+      toCrypto,
+      gasFee,
+      contract,
+      getOutAmount
+    );
+    const slipBtoA = callGetOutAmount(
+      price,
+      secondPriceInUSD,
+      firstPriceInSecond,
+      toCrypto,
+      fromCrypto,
+      gasFee,
+      contract,
+      getOutAmount
+    );
+    const [resultAtoB, resultBtoA] = await Promise.all([slipAtoB, slipBtoA]);
+    return [resultAtoB, resultBtoA];
+  });
 
   const results = await Promise.all(resultPromises);
   return results;

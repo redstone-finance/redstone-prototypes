@@ -45,7 +45,7 @@ const addresses = [
   },
 ];
 
-const { address, cryptoASymbol, cryptoBSymbol } = addresses[1];
+const { address, cryptoASymbol, cryptoBSymbol } = addresses[4];
 
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];

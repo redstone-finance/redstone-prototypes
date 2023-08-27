@@ -51,7 +51,7 @@ const addresses = [
 // More can be found:
 // redstone-oracles-monorepo/packages/oracle-node/src/fetchers/curve/curve-fetchers-config.ts
 
-const { address, fee, cryptoASymbol, cryptoBSymbol } = addresses[2];
+const { address, fee, cryptoASymbol, cryptoBSymbol } = addresses[4];
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];
 

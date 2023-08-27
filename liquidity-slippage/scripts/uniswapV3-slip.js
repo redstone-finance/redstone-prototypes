@@ -42,7 +42,7 @@ const pairs = [
   },
 ];
 
-const { cryptoASymbol, cryptoBSymbol, fee: givenFee } = pairs[1];
+const { cryptoASymbol, cryptoBSymbol, fee: givenFee } = pairs[4];
 let fee = givenFee;
 
 const cryptoA = constants[cryptoASymbol];
