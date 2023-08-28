@@ -11,7 +11,7 @@ const ZEROx_API_KEY = process.env.ZEROx_API_KEY;
 const API_URL = "https://api.0x.org/swap/v1/quote";
 const headers = { "0x-api-key": ZEROx_API_KEY };
 
-const DEX = "Ox";
+const DEX = "0x";
 
 const addresses = [
   {
@@ -46,7 +46,7 @@ const addresses = [
   },
 ];
 
-const { cryptoASymbol, cryptoBSymbol, poolSize, gasFee } = addresses[0];
+const { cryptoASymbol, cryptoBSymbol, poolSize, gasFee } = addresses[2];
 
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];

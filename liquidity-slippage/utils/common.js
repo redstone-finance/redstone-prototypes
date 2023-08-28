@@ -144,7 +144,7 @@ async function callGetOutAmount(
   return differencePercentage;
 }
 
-function delay(ms) {
+function delay(ms = 1500) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
@@ -163,7 +163,7 @@ async function slowCallGetOutAmount(
   const resultPromises = [];
   let counter = 0;
 
-  await delay(1500); // Delay to avoid rate limit
+  await delay(); // Delay to avoid rate limit
 
   for (const price of prices) {
     const slipAtoB = await callGetOutAmount(
@@ -177,7 +177,7 @@ async function slowCallGetOutAmount(
       getOutAmount
     );
 
-    await delay(2000); // Delay to avoid rate limit
+    await delay(); // Delay to avoid rate limit
 
     const slipBtoA = await callGetOutAmount(
       price,
@@ -193,8 +193,8 @@ async function slowCallGetOutAmount(
     resultPromises.push([slipAtoB, slipBtoA]);
 
     counter++;
-    if (counter % 10 === 0) console.log(`Fetched ${counter} prices`);
-    await delay(2000); // Delay to avoid rate limit
+    if (counter % 50 === 0) console.log(`Fetched ${counter} prices`);
+    await delay(); // Delay to avoid rate limit
   }
 
   return resultPromises;
@@ -213,18 +213,18 @@ async function calculatePriceDifference(
   const firstPriceInUSD = await getPrice(fromCrypto);
   const secondPriceInUSD = await getPrice(toCrypto);
 
-  // return await slowCallGetOutAmount(
-  //   prices,
-  //   firstPriceInSecond,
-  //   secondPriceInFirst,
-  //   gasFee,
-  //   fromCrypto,
-  //   toCrypto,
-  //   getOutAmount,
-  //   contract,
-  //   firstPriceInUSD,
-  //   secondPriceInUSD
-  // );
+  return await slowCallGetOutAmount(
+    prices,
+    firstPriceInSecond,
+    secondPriceInFirst,
+    gasFee,
+    fromCrypto,
+    toCrypto,
+    getOutAmount,
+    contract,
+    firstPriceInUSD,
+    secondPriceInUSD
+  );
 
   const resultPromises = prices.map(async (price) => {
     const slipAtoB = callGetOutAmount(

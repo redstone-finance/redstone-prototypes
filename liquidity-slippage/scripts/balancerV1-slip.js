@@ -45,7 +45,7 @@ const addresses = [
   },
 ];
 
-const { address, cryptoASymbol, cryptoBSymbol } = addresses[4];
+const { address, cryptoASymbol, cryptoBSymbol } = addresses[3];
 
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];
@@ -127,7 +127,7 @@ async function getPricesInEachOther(fromCrypto, toCrypto) {
     tokenBalanceOut,
     fromCrypto.decimals,
     toCrypto.decimals
-  );
+  ); // TODO: multiply by weight
 
   const poolSize = await calculatePoolSize(
     ethers.utils.formatUnits(tokenBalanceIn.toString(), fromCrypto.decimals),
