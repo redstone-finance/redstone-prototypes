@@ -34,18 +34,13 @@ const addresses = [
     cryptoBSymbol: "USDC",
   },
   {
-    address: "0x165a50Bc092f6870DC111C349baE5Fc35147ac86",
-    cryptoASymbol: "WETH",
-    cryptoBSymbol: "DAI",
-  },
-  {
     address: "0xc2A04278Ad502349e6AABb748A41ABdA9dfD18a9",
     cryptoASymbol: "PNK",
     cryptoBSymbol: "WETH",
   },
 ];
 
-const { address, cryptoASymbol, cryptoBSymbol } = addresses[3];
+const { address, cryptoASymbol, cryptoBSymbol } = addresses[0];
 
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];
@@ -122,13 +117,13 @@ async function getOutAmount(fromAmount, fromCrypto, toCrypto, contract) {
 
 async function getPricesInEachOther(fromCrypto, toCrypto) {
   await prepareData(fromCrypto, toCrypto);
+
   const [secondPriceInFirst, firstPriceInSecond] = calcPricesInEachOther(
-    tokenBalanceIn,
+    tokenBalanceIn.mul(tokenWeightOut).div(tokenWeightIn), // pool is weighted
     tokenBalanceOut,
     fromCrypto.decimals,
     toCrypto.decimals
-  ); // TODO: multiply by weight
-
+  );
   const poolSize = await calculatePoolSize(
     ethers.utils.formatUnits(tokenBalanceIn.toString(), fromCrypto.decimals),
     ethers.utils.formatUnits(tokenBalanceOut.toString(), toCrypto.decimals),
