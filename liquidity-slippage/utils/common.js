@@ -144,7 +144,7 @@ async function callGetOutAmount(
   return differencePercentage;
 }
 
-function delay(ms = 1500) {
+function delay(ms = 2000) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
