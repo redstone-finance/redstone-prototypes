@@ -374,7 +374,13 @@ const constants = {
   wstETH: {
     symbol: "wstETH",
     name: "wrapped-steth",
-    address: "0x7e2f2e3ebea6c36467dcefd5f1c39a5cc5ebdcfe",
+    address: "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0",
+    decimals: 18,
+  },
+  bbAUSD: {
+    symbol: "bb-A-USD",
+    name: "balancer-booster-aave-usd",
+    address: "0xc443c15033fcb6cf72cc24f1bda0db070ddd9786",
     decimals: 18,
   },
 

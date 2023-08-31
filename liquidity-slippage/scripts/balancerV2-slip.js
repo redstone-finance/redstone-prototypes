@@ -13,7 +13,7 @@ const {
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
-const DATA_INDEX = 0;
+const DATA_INDEX = 1;
 
 // TODO: correct addresses, its usually multi swap so check which tokens
 // exactly do you swap or swap on multiple pools at once...
@@ -30,6 +30,18 @@ const addresses = [
     cryptoASymbol: "swETH",
     cryptoBSymbol: "wstETH",
   },
+
+  {
+    address: "0x02d928e68d8f10c0358566152677db51e1e2dc8c",
+    poolId:
+      "0xc2b021133d1b0cf07dba696fd5dd89338428225b000000000000000000000598",
+    fee: 0.0, //todo: get fee
+    fromIndex: 0,
+    toIndex: 1,
+    cryptoASymbol: "GHO",
+    cryptoBSymbol: "bbAUSD",
+  },
+
   {
     address: "0x60d604890feaa0b5460b28a424407c24fe89374a",
     poolId:
@@ -100,7 +112,6 @@ const FUNDS = {
 };
 
 const BPoolABI = [
-  "function getPool(bytes32) external view returns (uint8)",
   {
     inputs: [
       {
@@ -241,6 +252,30 @@ async function getOutAmount(fromAmount, fromCrypto, toCrypto, contract) {
     },
   ];
 
+  // const batchSwapStepsToRemove = [
+  //   {
+  //     poolId:
+  //       "0x02d928e68d8f10c0358566152677db51e1e2dc8c00000000000000000000051e",
+  //     assetInIndex: 0,
+  //     assetOutIndex: 1,
+  //     amount: "10000000000",
+  //     userData: "0x",
+  //   },
+  //   {
+  //     poolId:
+  //       "0x60d604890feaa0b5460b28a424407c24fe89374a0000000000000000000004fc",
+  //     assetInIndex: 1,
+  //     assetOutIndex: 2,
+  //     amount: "100000",
+  //     userData: "0x",
+  //   },
+  // ];
+  // const tokenAddressesToRemove = [
+  //   "0xf951e335afb289353dc249e82926178eac7ded78",
+  //   "0x60d604890feaa0b5460b28a424407c24fe89374a",
+  //   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+  // ];
+
   const tokenAddresses = [fromCrypto.address, toCrypto.address];
 
   const result = await contract.callStatic.queryBatchSwap(
@@ -251,9 +286,11 @@ async function getOutAmount(fromAmount, fromCrypto, toCrypto, contract) {
   );
 
   console.log("Query Batch Swap Result:", result);
+  console.log("Results 0:", result[0].toString());
+  console.log("Results 1:", result[1].toString());
   //TODO probably return results[1] or also parse it...
 
-  return 0;
+  return result[1];
 
   return ethers.utils.formatUnits(outAmount.toString(), toCrypto.decimals);
 }
@@ -261,6 +298,10 @@ async function getOutAmount(fromAmount, fromCrypto, toCrypto, contract) {
 async function calculateSlippage(fromCrypto, toCrypto) {
   const [poolSize, firstPriceInSecond, secondPriceInFirst] =
     await getPricesInEachOther(fromCrypto, toCrypto);
+
+  console.log("Pool size:", poolSize);
+  console.log("First price in second:", firstPriceInSecond);
+  console.log("Second price in first:", secondPriceInFirst);
   return;
 
   // calculateAndWriteToCSV(
