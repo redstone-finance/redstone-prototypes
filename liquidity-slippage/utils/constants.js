@@ -371,6 +371,12 @@ const constants = {
     address: "0x40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f",
     decimals: 18,
   },
+  wstETH: {
+    symbol: "wstETH",
+    name: "wrapped-steth",
+    address: "0x7e2f2e3ebea6c36467dcefd5f1c39a5cc5ebdcfe",
+    decimals: 18,
+  },
 
   pricesUnrelated: [1e4, 1e6, 1e8],
   pricesRelated: [1e-3, 1e-2, 1e-1],

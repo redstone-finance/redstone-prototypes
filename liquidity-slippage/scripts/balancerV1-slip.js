@@ -15,6 +15,8 @@ const {
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
+const DATA_INDEX = 0;
+
 const DEX = "Balancer V1";
 
 const addresses = [
@@ -40,7 +42,7 @@ const addresses = [
   },
 ];
 
-const { address, cryptoASymbol, cryptoBSymbol } = addresses[0];
+const { address, cryptoASymbol, cryptoBSymbol } = addresses[DATA_INDEX];
 
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];

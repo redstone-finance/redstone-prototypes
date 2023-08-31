@@ -7,8 +7,10 @@ const { amountTradeXSlippage } = require("../utils/common");
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const ONEinch_API_KEY = process.env.ONEinch_API_KEY;
-const DEX = "1inch";
 
+const DATA_INDEX = 0;
+
+const DEX = "1inch";
 const quoteApiUrl = "https://api.1inch.dev/swap/v5.2/1/quote";
 const priceApiUrl = "https://api.1inch.dev/price/v1.1/1";
 
@@ -45,7 +47,7 @@ const addresses = [
   },
 ];
 
-const { cryptoASymbol, cryptoBSymbol, poolSize, gasFee } = addresses[2];
+const { cryptoASymbol, cryptoBSymbol, poolSize, gasFee } = addresses[DATA_INDEX];
 
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];

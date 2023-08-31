@@ -9,11 +9,12 @@ const {
   reversePrice,
 } = require("../utils/common");
 
-const DEX = "Uniswap V3";
-
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
+const DATA_INDEX = 0;
+
+const DEX = "Uniswap V3";
 const pairs = [
   {
     cryptoASymbol: "USDC",
@@ -42,7 +43,7 @@ const pairs = [
   },
 ];
 
-const { cryptoASymbol, cryptoBSymbol, fee: givenFee } = pairs[4];
+const { cryptoASymbol, cryptoBSymbol, fee: givenFee } = pairs[DATA_INDEX];
 let fee = givenFee;
 
 const cryptoA = constants[cryptoASymbol];

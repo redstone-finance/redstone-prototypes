@@ -11,6 +11,8 @@ const {
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
+const DATA_INDEX = 0;
+
 const provider = new ethers.providers.JsonRpcProvider(
   `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`
 );
@@ -51,7 +53,7 @@ const addresses = [
 // More can be found:
 // redstone-oracles-monorepo/packages/oracle-node/src/fetchers/curve/curve-fetchers-config.ts
 
-const { address, fee, cryptoASymbol, cryptoBSymbol } = addresses[4];
+const { address, fee, cryptoASymbol, cryptoBSymbol } = addresses[DATA_INDEX];
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];
 

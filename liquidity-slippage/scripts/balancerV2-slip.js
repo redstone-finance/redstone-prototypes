@@ -13,11 +13,23 @@ const {
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
+const DATA_INDEX = 0;
+
 // TODO: correct addresses, its usually multi swap so check which tokens
 // exactly do you swap or swap on multiple pools at once...
 
 // TODO: check if correct indexes on given pool...
 const addresses = [
+  {
+    address: "0xe0e8ac08de6708603cfd3d23b613d2f80e3b7afb",
+    poolId:
+      "0xe0e8ac08de6708603cfd3d23b613d2f80e3b7afb00020000000000000000058a",
+    fee: 0.0, //todo: get fee
+    fromIndex: 0,
+    toIndex: 1,
+    cryptoASymbol: "swETH",
+    cryptoBSymbol: "wstETH",
+  },
   {
     address: "0x60d604890feaa0b5460b28a424407c24fe89374a",
     poolId:
@@ -68,7 +80,7 @@ const {
   cryptoBSymbol,
   fromIndex,
   toIndex,
-} = addresses[2];
+} = addresses[DATA_INDEX];
 
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];
@@ -181,11 +193,12 @@ const contract = new ethers.Contract(
 );
 
 async function getPricesInEachOther(fromCrypto, toCrypto) {
-  const poolSize = await getApproximateTokensAmountInPool(
-    address,
-    fromCrypto,
-    toCrypto
-  );
+  // const poolSize = await getApproximateTokensAmountInPool(
+  //   address,
+  //   fromCrypto,
+  //   toCrypto
+  // );
+  const poolSize = 0;
 
   const secondPriceInFirst = await getOutAmount(
     ethers.utils.parseUnits("1", fromCrypto.decimals),

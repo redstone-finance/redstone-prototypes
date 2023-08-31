@@ -8,6 +8,8 @@ const { amountTradeXSlippage } = require("../utils/common");
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const ZEROx_API_KEY = process.env.ZEROx_API_KEY;
 
+const DATA_INDEX = 0;
+
 const API_URL = "https://api.0x.org/swap/v1/quote";
 const headers = { "0x-api-key": ZEROx_API_KEY };
 
@@ -46,7 +48,7 @@ const addresses = [
   },
 ];
 
-const { cryptoASymbol, cryptoBSymbol, poolSize, gasFee } = addresses[2];
+const { cryptoASymbol, cryptoBSymbol, poolSize, gasFee } = addresses[DATA_INDEX];
 
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];

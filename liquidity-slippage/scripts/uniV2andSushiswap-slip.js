@@ -12,6 +12,8 @@ const {
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
+const DATA_INDEX = 0;
+
 const pairs = [
   {
     cryptoASymbol: "USDT",
@@ -35,7 +37,7 @@ const pairs = [
   },
 ];
 
-const { cryptoASymbol, cryptoBSymbol } = pairs[0];
+const { cryptoASymbol, cryptoBSymbol } = pairs[DATA_INDEX];
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];
 
