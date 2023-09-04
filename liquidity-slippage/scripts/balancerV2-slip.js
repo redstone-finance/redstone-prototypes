@@ -1,4 +1,3 @@
-//TODO: refactor balancer V2 how to get amout out?!
 const ethers = require("ethers");
 const dotenv = require("dotenv");
 const path = require("path");
@@ -13,74 +12,53 @@ const {
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
-const DATA_INDEX = 1;
+const DATA_INDEX = 0;
+const DEX = "Balancer V2";
 
-// TODO: correct addresses, its usually multi swap so check which tokens
-// exactly do you swap or swap on multiple pools at once...
+const [DEFAULT_DECIMALS, BIGGER_DECIMALS, SMALLER_DECIMALS] = [15, 21, 10];
+const DEFAULT_AMOUNT = ethers.utils
+  .parseUnits("1", DEFAULT_DECIMALS)
+  .toString();
+const BIGGER_AMOUNT = ethers.utils.parseUnits("1", BIGGER_DECIMALS).toString();
+const SMALLER_AMOUNT = ethers.utils
+  .parseUnits("1", SMALLER_DECIMALS)
+  .toString();
 
-// TODO: check if correct indexes on given pool...
 const addresses = [
   {
-    address: "0xe0e8ac08de6708603cfd3d23b613d2f80e3b7afb",
+    address: "0x0e3a2a1f2146d86a604adc220b4967a898d7fe07", //todo
+    poolId:
+      "0xe7e2c68d3b13d905bbb636709cf4dfd21076b9d20000000000000000000005ca",
+    fee: 0.002, //todo: get fee
+    fromIndex: 0,
+    toIndex: 1,
+    cryptoASymbol: "swETH",
+    cryptoBSymbol: "WETH",
+    //works on default amount
+  },
+  {
+    address: "0x0e3a2a1f2146d86a604adc220b4967a898d7fe07", //todo
+    poolId:
+      "0x5c6ee304399dbdb9c8ef030ab642b10820db8f56000200000000000000000014",
+    fee: 0.002, //todo: get fee
+    fromIndex: 0,
+    toIndex: 1,
+    cryptoASymbol: "BAL",
+    cryptoBSymbol: "WETH",
+    //works on default amount
+  },
+
+  {
+    //todo: maybe different amount to get spot price
+    address: "0xe0e8ac08de6708603cfd3d23b613d2f80e3b7afb", // todo
     poolId:
       "0xe0e8ac08de6708603cfd3d23b613d2f80e3b7afb00020000000000000000058a",
-    fee: 0.0, //todo: get fee
+    fee: 0.002, //todo: get fee
     fromIndex: 0,
     toIndex: 1,
     cryptoASymbol: "swETH",
     cryptoBSymbol: "wstETH",
-  },
-
-  {
-    address: "0x02d928e68d8f10c0358566152677db51e1e2dc8c",
-    poolId:
-      "0xc2b021133d1b0cf07dba696fd5dd89338428225b000000000000000000000598",
-    fee: 0.0, //todo: get fee
-    fromIndex: 0,
-    toIndex: 1,
-    cryptoASymbol: "GHO",
-    cryptoBSymbol: "bbAUSD",
-  },
-
-  {
-    address: "0x60d604890feaa0b5460b28a424407c24fe89374a",
-    poolId:
-      "0x60d604890feaa0b5460b28a424407c24fe89374a0000000000000000000004fc",
-    fee: 0.0, //todo: get fee
-    cryptoASymbol: "swETH",
-    cryptoBSymbol: "WETH",
-    fromIndex: 1,
-    toIndex: 2,
-  },
-  {
-    address: "0xc443c15033fcb6cf72cc24f1bda0db070ddd9786",
-    poolId:
-      "0xc443c15033fcb6cf72cc24f1bda0db070ddd9786000000000000000000000593",
-    fee: 0.0, //todo: get fee
-    cryptoASymbol: "GHO",
-    cryptoBSymbol: "DAI",
-    fromIndex: 1,
-    toIndex: 2,
-  },
-  {
-    address: "0xc443c15033fcb6cf72cc24f1bda0db070ddd9786",
-    poolId:
-      "0xc443c15033fcb6cf72cc24f1bda0db070ddd9786000000000000000000000593",
-    fee: 0.0, //todo: get fee
-    cryptoASymbol: "GHO",
-    cryptoBSymbol: "USDC",
-    fromIndex: 1,
-    toIndex: 2,
-  },
-  {
-    address: "0xcfae6e251369467f465f13836ac8135bd42f8a56",
-    poolId:
-      "0xcfae6e251369467f465f13836ac8135bd42f8a56000000000000000000000591",
-    fee: 0.0, //todo: get fee
-    cryptoASymbol: "GHO",
-    cryptoBSymbol: "USDT",
-    fromIndex: 2,
-    toIndex: 3,
+    //works on smaller amount
   },
 ];
 
@@ -96,6 +74,9 @@ const {
 
 const cryptoA = constants[cryptoASymbol];
 const cryptoB = constants[cryptoBSymbol];
+
+console.log("Crypto A:", cryptoA);
+console.log("Crypto B:", cryptoB);
 
 const provider = new ethers.providers.JsonRpcProvider(
   `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`
@@ -212,14 +193,14 @@ async function getPricesInEachOther(fromCrypto, toCrypto) {
   const poolSize = 0;
 
   const secondPriceInFirst = await getOutAmount(
-    ethers.utils.parseUnits("1", fromCrypto.decimals),
+    ethers.utils.parseUnits("1", fromCrypto.decimals).toString(),
     fromCrypto,
     toCrypto,
     contract
   );
 
   const firstPriceInSecond = await getOutAmount(
-    ethers.utils.parseUnits("1", toCrypto.decimals),
+    ethers.utils.parseUnits("1", toCrypto.decimals).toString(),
     toCrypto,
     fromCrypto,
     contract
@@ -247,7 +228,8 @@ async function getOutAmount(fromAmount, fromCrypto, toCrypto, contract) {
       poolId: poolId,
       assetInIndex: from,
       assetOutIndex: to,
-      amount: fromAmount,
+      // amount: SMALLER_AMOUNT, //todo: change to fromAmount
+      amount: fromAmount, // TODO: maybe change to string..
       userData: "0x",
     },
   ];
@@ -258,7 +240,7 @@ async function getOutAmount(fromAmount, fromCrypto, toCrypto, contract) {
   //       "0x02d928e68d8f10c0358566152677db51e1e2dc8c00000000000000000000051e",
   //     assetInIndex: 0,
   //     assetOutIndex: 1,
-  //     amount: "10000000000",
+  //     amount: DEFAULT_AMOUNT,
   //     userData: "0x",
   //   },
   //   {
@@ -266,7 +248,7 @@ async function getOutAmount(fromAmount, fromCrypto, toCrypto, contract) {
   //       "0x60d604890feaa0b5460b28a424407c24fe89374a0000000000000000000004fc",
   //     assetInIndex: 1,
   //     assetOutIndex: 2,
-  //     amount: "100000",
+  //     amount: "0",
   //     userData: "0x",
   //   },
   // ];
@@ -276,7 +258,30 @@ async function getOutAmount(fromAmount, fromCrypto, toCrypto, contract) {
   //   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
   // ];
 
+  // console.log("Query Batch Swap Params:", {
+  //   SwapExactIn,
+  //   batchSwapStepsToRemove,
+  //   tokenAddressesToRemove,
+  //   FUNDS,
+  // });
+
+  // const result2 = await contract.callStatic.queryBatchSwap(
+  //   SwapExactIn,
+  //   batchSwapStepsToRemove,
+  //   tokenAddressesToRemove,
+  //   FUNDS
+  // );
+  // console.log("Query Batch Swap Result2:", result2);
+  // return;
+
   const tokenAddresses = [fromCrypto.address, toCrypto.address];
+
+  console.log("Query Batch Swap Params:", {
+    SwapExactIn,
+    batchSwapSteps,
+    tokenAddresses,
+    FUNDS,
+  });
 
   const result = await contract.callStatic.queryBatchSwap(
     SwapExactIn,

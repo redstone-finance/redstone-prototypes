@@ -383,6 +383,12 @@ const constants = {
     address: "0xc443c15033fcb6cf72cc24f1bda0db070ddd9786",
     decimals: 18,
   },
+  bbAWETH: {
+    symbol: "bb-A-WETH",
+    name: "balancer-aave-v3-boosted-pool-weth",
+    address: "0x60d604890feaa0b5460b28a424407c24fe89374a",
+    decimals: 18,
+  },
 
   pricesUnrelated: [1e4, 1e6, 1e8],
   pricesRelated: [1e-3, 1e-2, 1e-1],
