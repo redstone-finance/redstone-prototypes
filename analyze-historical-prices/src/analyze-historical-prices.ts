@@ -33,7 +33,9 @@ async function analyzeDeviations(token: string) {
     console.log(`Source: ${sourceKey}`);
     console.log(`Min Price: ${min}`);
     console.log(`Max Price: ${max}`);
-    console.log(`Difference deviation: ${(max - min) / min}`);
+    console.log(
+      `Difference deviation: ${(((max - min) / min) * 100).toFixed(2)}%`
+    );
   }
 
   // for (const priceData of pricesData) {
