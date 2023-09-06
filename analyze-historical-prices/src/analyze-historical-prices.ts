@@ -1,68 +1,67 @@
-import axios from "axios";
+import redstone from "redstone-api";
 
-interface TokenPrice {
-  token: string;
-  value: number;
-}
+async function analyzeDeviations(token: string) {
+  const pricesData: any = await redstone.getHistoricalPrice(token, {
+    startDate: "2023-07-12T23:00:01",
+    endDate: "2023-07-14T04:00:00",
+    interval: 600 * 1000, // 10 minutes
+  });
 
-async function updateLimits(service: string) {
-  const latestPricesUrl = `https://oracle-gateway-1.a.redstone.finance/data-packages/latest/redstone-${service}-prod`;
-  //todo: add the period to the url and fetch only one token
+  const sourceMinMax: { [key: string]: { min: number; max: number } } = {};
 
-  try {
-    const latestPricesResponse = await axios.get<any>(latestPricesUrl);
-    const tokensPrices: TokenPrice[] = getTokensPrices(
-      latestPricesResponse.data
-    );
+  for (const priceData of pricesData) {
+    const sources = priceData.source;
 
-    // console.log("Tokens prices:");
-    // for (const tokenPrice of tokensPrices) {
-    //   console.log(`${tokenPrice.token}: ${tokenPrice.value}`);
-    // }
-  } catch (error) {
-    console.error(`Error while fetching latest prices: ${error}`);
-  }
-}
+    for (const key in sources) {
+      const value = sources[key];
 
-function getTokensPrices(latestPrices: any): TokenPrice[] {
-  let tokensPrices: TokenPrice[] = [];
-  for (const currency in latestPrices) {
-    const currencyDataPoints = latestPrices[currency];
-    if (currency === "___ALL_FEEDS___") continue;
-    const currencyPrice = currencyDataPoints[0].dataPoints[0].value;
-    reportPriceDifference(currency, currencyDataPoints, currencyPrice);
-    tokensPrices.push({ token: currency, value: currencyPrice });
-  }
-  return tokensPrices;
-}
-
-function reportPriceDifference(
-  currency: string,
-  currencyDataPoints: any,
-  currencyPrice: number
-) {
-  let [max, min] = [currencyPrice, currencyPrice];
-  for (const currencyDataPoint of currencyDataPoints) {
-    for (const dataPoint of currencyDataPoint.dataPoints) {
-      const value = dataPoint.value;
-      if (value > max) max = value;
-      if (value < min) min = value;
+      if (!sourceMinMax[key]) {
+        sourceMinMax[key] = { min: value, max: value };
+      } else {
+        if (value > sourceMinMax[key].max) {
+          sourceMinMax[key].max = value;
+        }
+        if (value < sourceMinMax[key].min) {
+          sourceMinMax[key].min = value;
+        }
+      }
     }
   }
-  if (max != min) {
-    console.log(
-      `Difference deviation for ${currency}: ${
-        (max - min) / currencyPrice
-      }`
-    );
+
+  for (const sourceKey in sourceMinMax) {
+    const { min, max } = sourceMinMax[sourceKey];
+    console.log(`Source: ${sourceKey}`);
+    console.log(`Min Price: ${min}`);
+    console.log(`Max Price: ${max}`);
+    console.log(`Difference deviation: ${(max - min) / min}`);
   }
+
+  // for (const priceData of pricesData) {
+  //   const sources = priceData.source;
+  //   const price = priceData.value;
+  //   let [min, max] = [price, price];
+  //   let [minSource, maxSource] = ["", ""];
+
+  //   for (const key in sources) {
+  //     const value = sources[key];
+  //     if (value > max) {
+  //       max = value;
+  //       maxSource = key;
+  //     }
+  //     if (value < min) {
+  //       min = value;
+  //       minSource = key;
+  //     }
+  //   }
+  //   console.log(`Difference deviation for token: ${(max - min) / price}`);
+  //   console.log(`Min source: ${minSource}`);
+  //   console.log(`Max source: ${maxSource}`);
+  // }
 }
 
-const service = process.argv[2];
-if (service) {
-  updateLimits(service);
+const token = process.argv[2];
+if (token) {
+  analyzeDeviations(token);
 } else {
-  console.error(
-    "Please provide the service name (e.g., primary or avalanche)."
-  );
+  console.error("Please provide the token name (e.g. ADA, MATIC).");
 }
