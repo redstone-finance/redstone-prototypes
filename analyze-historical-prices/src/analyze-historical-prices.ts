@@ -1,4 +1,6 @@
 import redstone from "redstone-api";
+import { createObjectCsvWriter } from "csv-writer";
+import path from "path";
 
 async function analyzeDeviations(token: string) {
   const pricesData: any = await redstone.getHistoricalPrice(token, {
@@ -28,37 +30,36 @@ async function analyzeDeviations(token: string) {
     }
   }
 
+  const outputFolder = "results";
+  const csvFilePath = path.join(outputFolder, `${token}-deviation.csv`);
+
+  const csvWriter = createObjectCsvWriter({
+    path: csvFilePath,
+    header: [
+      { id: "source", title: "Source" },
+      { id: "minPrice", title: "Min Price" },
+      { id: "maxPrice", title: "Max Price" },
+      { id: "deviationPercentage", title: "Deviation Percentage" },
+    ],
+  });
+
+  const csvData = [];
+
   for (const sourceKey in sourceMinMax) {
     const { min, max } = sourceMinMax[sourceKey];
-    console.log(`Source: ${sourceKey}`);
-    console.log(`Min Price: ${min}`);
-    console.log(`Max Price: ${max}`);
-    console.log(
-      `Difference deviation: ${(((max - min) / min) * 100).toFixed(2)}%`
-    );
+    const deviationPercentage = (((max - min) / min) * 100).toFixed(2);
+
+    csvData.push({
+      source: sourceKey,
+      minPrice: min,
+      maxPrice: max,
+      deviationPercentage: deviationPercentage,
+    });
   }
 
-  // for (const priceData of pricesData) {
-  //   const sources = priceData.source;
-  //   const price = priceData.value;
-  //   let [min, max] = [price, price];
-  //   let [minSource, maxSource] = ["", ""];
+  await csvWriter.writeRecords(csvData);
 
-  //   for (const key in sources) {
-  //     const value = sources[key];
-  //     if (value > max) {
-  //       max = value;
-  //       maxSource = key;
-  //     }
-  //     if (value < min) {
-  //       min = value;
-  //       minSource = key;
-  //     }
-  //   }
-  //   console.log(`Difference deviation for token: ${(max - min) / price}`);
-  //   console.log(`Min source: ${minSource}`);
-  //   console.log(`Max source: ${maxSource}`);
-  // }
+  console.log(`Data saved to ${csvFilePath}`);
 }
 
 const token = process.argv[2];
