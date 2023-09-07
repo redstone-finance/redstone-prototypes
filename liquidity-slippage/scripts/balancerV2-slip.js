@@ -12,7 +12,7 @@ const {
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
-const DATA_INDEX = 0;
+const DATA_INDEX = 1;
 const DEX = "Balancer V2";
 
 const [DEFAULT_DECIMALS, BIGGER_DECIMALS, SMALLER_DECIMALS] = [15, 21, 10];
@@ -228,7 +228,7 @@ async function getOutAmount(fromAmount, fromCrypto, toCrypto, contract) {
       poolId: poolId,
       assetInIndex: from,
       assetOutIndex: to,
-      // amount: SMALLER_AMOUNT, //todo: change to fromAmount
+      amount: DEFAULT_AMOUNT, //todo: change to fromAmount
       amount: fromAmount, // TODO: maybe change to string..
       userData: "0x",
     },
