@@ -8,7 +8,7 @@ const { amountTradeXSlippage } = require("../utils/common");
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const ONEinch_API_KEY = process.env.ONEinch_API_KEY;
 
-const DATA_INDEX = 0;
+const DATA_INDEX = 2;
 
 const DEX = "1inch";
 const quoteApiUrl = "https://api.1inch.dev/swap/v5.2/1/quote";
