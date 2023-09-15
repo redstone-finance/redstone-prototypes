@@ -8,7 +8,7 @@ const { amountTradeXSlippage } = require("../utils/common");
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const ZEROx_API_KEY = process.env.ZEROx_API_KEY;
 
-const DATA_INDEX = 2;
+const DATA_INDEX = 3;
 
 const API_URL = "https://api.0x.org/swap/v1/quote";
 const headers = { "0x-api-key": ZEROx_API_KEY };
