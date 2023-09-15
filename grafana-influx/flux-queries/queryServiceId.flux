@@ -1,0 +1,7 @@
+from(bucket: "redstone")
+  |> range(start: -7d)
+  |> filter(fn: (r) => r["_measurement"] == "dataPackages")
+  |> keep(columns: ["dataServiceId"])
+  |> group()
+  |> distinct(column: "dataServiceId")
+  |> yield(name: "dataServiceId")
