@@ -1,5 +1,5 @@
 from(bucket: "redstone")
-  |> range(start: -1m)
+  |> range(start: -7d)
   |> filter(fn: (r) => r["_measurement"] == "dataPackages")
   |> keep(columns: ["dataServiceId"])
   |> group()
