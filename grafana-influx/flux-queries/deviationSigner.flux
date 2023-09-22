@@ -1,7 +1,8 @@
 import "strings"
+import "join"
 
 // todo: add this to Variables in grafana and remove the hardcoding
-v = {timeRangeStart: -12h, timeRangeStop: -9h}
+v = {timeRangeStart: -2d, timeRangeStop: -1m}
 dataServiceId = "redstone-primary-prod" 
 signerAddress = "0x51Ce04Be4b3E32572C4Ec9135221d0691Ba7d202"
 dataFeedId = ["ETH", "AAVE"]
@@ -9,8 +10,9 @@ dataFeedId = ["ETH", "AAVE"]
 // signerAddress = "${querySignerAddress}"
 // dataFeedIdString = "${queryDataFeedId:pipe}"
 // dataFeedId = strings.split(v: dataFeedIdString, t: "|")
+// windowPeriod = duration(v: "${windowPeriod}")
 
-windowPeriod = 30m
+windowPeriod = 3h
 
 calculateDeviationPercentage = (value1, value2) => {
   return (value1 - value2) / value2 * 100.0
@@ -18,34 +20,46 @@ calculateDeviationPercentage = (value1, value2) => {
 
 valueStream = from(bucket: "redstone")
   |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
-  |> filter(fn: (r) => r["_measurement"] == "dataPackages" and r.dataServiceId == dataServiceId and r.signerAddress == signerAddress and r["_field"] == "value")
-  |> filter(fn: (r) => contains(value: r.dataFeedId, set: dataFeedId))
-  // |> filter(fn: (r) => dataFeedId == "" or r.dataFeedId == dataFeedId)
+  |> filter(fn: (r) =>
+    r.dataServiceId == dataServiceId and
+    r.signerAddress == signerAddress and
+    r._measurement == "dataPackages" and
+    r._field == "value" and
+    contains(value: r.dataFeedId, set: dataFeedId)
+  )
+  |> keep(columns: ["_time", "_value", "dataFeedId"])
   |> aggregateWindow(every: windowPeriod, fn: mean, createEmpty: false)
   |> keep(columns: ["_time", "_value", "dataFeedId"])
-  // |> yield(name: "valueStream")
+  |> group(columns: ["dataFeedId"])
 
 sourcesStream = from(bucket: "redstone")
   |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
-  |> filter(fn: (r) => r["_measurement"] == "dataPackages" and r.dataServiceId == dataServiceId and r.signerAddress == signerAddress and r.dataFeedId != "___ALL_FEEDS___")
-  |> filter(fn: (r) => strings.hasPrefix(v: r["_field"], prefix: "value") and not strings.hasPrefix(v: r["_field"], prefix: "value-slippage"))
-  |> filter(fn: (r) => contains(value: r.dataFeedId, set: dataFeedId))
+  |> filter(fn: (r) =>
+    contains(value: r.dataFeedId, set: dataFeedId) and
+    r.signerAddress == signerAddress and
+    r.dataServiceId == dataServiceId and
+    r._measurement == "dataPackages" and
+    r.dataFeedId != "___ALL_FEEDS___" and
+    strings.hasPrefix(v: r["_field"], prefix: "value") and
+    not strings.hasPrefix(v: r["_field"], prefix: "value-slippage")
+  )
+  |> keep(columns: ["_time", "_field", "_value", "dataFeedId"])
   |> aggregateWindow(every: windowPeriod, fn: mean, createEmpty: false)
   |> keep(columns: ["_time", "_field", "_value", "dataFeedId"])
-  // |> yield(name: "sourcesStream")
+  |> group(columns: ["dataFeedId"])
 
-joined = join(
-  tables: {v: valueStream, s: sourcesStream},
-  on: ["_time", "dataFeedId"],
+joined = join.left(
+  left: sourcesStream,
+  right: valueStream,
+  on: (l,r) => l.dataFeedId == r.dataFeedId and l._time == r._time,
+  as: (l,r) => ({
+    _time: l._time, 
+    sourceField: l._field, 
+    _value: calculateDeviationPercentage(value1: l._value, value2: r._value),
+    dataFeedId: l.dataFeedId
+  })
 )
 
 joined
-  // |> yield(name: "joined")
-  |> map(fn: (r) => ({
-      _time: r._time,
-      deviationPercentage: calculateDeviationPercentage(value1: r._value_s, value2: r._value_v),
-      sourceField: r._field,
-      dataFeedId: r.dataFeedId,
-  }))
   |> group(columns: ["sourceField", "dataFeedId"])
   |> yield(name: "deviationPercentage")

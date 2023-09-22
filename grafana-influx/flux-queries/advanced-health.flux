@@ -20,13 +20,13 @@ calculateDeviationPercentage = (value1, value2) => {
 valueStream = from(bucket: "redstone")
   |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
   |> filter(fn: (r) => r["_measurement"] == "dataPackages" and r.dataServiceId == dataServiceId and r.dataFeedId == dataFeedId and r["_field"] == "value")
-  |> aggregateWindow(every: windowPeriod, fn: mean, createEmpty: false)
+  |> aggregateWindow(every: 1m, fn: mean, createEmpty: false)
   |> keep(columns: ["_time", "_value"])
 
 relayerStream = from(bucket: "redstone")
   |> range(start: v.timeRangeStart)
   |> filter(fn: (r) => r["_measurement"] == "onChainRelayersTransactions" and r.relayerName == relayerName and r._field == relayerField)
-  |> aggregateWindow(every: windowPeriod, fn: mean, createEmpty: true)
+  |> aggregateWindow(every: 1m, fn: mean, createEmpty: true)
   |> keep(columns: ["_time", "_value"])
 
 joined = join.left(
@@ -39,6 +39,7 @@ joined = join.left(
   |> filter(fn: (r) => r._value_relayer != 0.0)
 
 joined
-  |> map(fn: (r) => ({r with deviation: calculateDeviationPercentage(value1: r._value, value2: r._value_relayer)}))
-  |> keep(columns: ["_time", "deviation"])
+  |> map(fn: (r) => ({r with _value: calculateDeviationPercentage(value1: r._value, value2: r._value_relayer)}))
+  |> aggregateWindow(every: windowPeriod, fn: mean, createEmpty: false)
+  |> keep(columns: ["_time", "_value"])
   |> yield(name: "deviation")

@@ -6,12 +6,12 @@ load_dotenv()
 grafana_api_url = os.environ["GRAFANA_API_URL"]
 grafana_api_key = os.environ["GRAFANA_API_KEY"]
 
-
+title = "Health Core Model"
+folderId = 17  # can use get-folder.py to check name of desired directory
 panelFiles = ["basic-health", "advanced-health"]
 queryVariableFiles = ["queryRelayerName", "queryDataServiceId", "queryFeedIdCommon"]
 includeWindowPeriod = True
-overwritePerviousDashboard = True
-
+overwritePerviousDashboard = False
 
 panelQueries = {}
 for panelFile in panelFiles:
@@ -29,7 +29,6 @@ for name, query in panelQueries.items():
         "gridPos": {"x": 0, "y": 0, "w": 24, "h": 9},
     }
     panels.append(panel)
-
 
 queryVariables = {}
 for queryVariableFile in queryVariableFiles:
@@ -66,14 +65,14 @@ if includeWindowPeriod:
 
 dashboard = {
     "dashboard": {
-        "title": "Grafana API big",
+        "title": title,
         "panels": panels,
         "templating": {
             "list": templating_variables,
         },
         "time": {"from": "now-60d", "to": "now"},
     },
-    "folderId": 17,
+    "folderId": folderId,
     "overwrite": overwritePerviousDashboard,
 }
 
