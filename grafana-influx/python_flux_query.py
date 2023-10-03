@@ -9,7 +9,7 @@ influxdb_url = os.environ["INFLUXDB_URL"]
 org = os.environ["INFLUXDB_ORG"]
 token = os.environ["INFLUXDB_TOKEN"]
 
-timeout = 3 * 60 * 1000  # 3 minutes
+timeout = 5 * 60 * 1000  # 5 minutes
 
 if len(sys.argv) < 2:
     print("Usage: python3 python_flux_query.py <query_file>")

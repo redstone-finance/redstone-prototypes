@@ -9,7 +9,7 @@ signerAddress = "0x51Ce04Be4b3E32572C4Ec9135221d0691Ba7d202"
 // signerAddress = "${querySignerAddress}"
 // windowPeriod = duration(v: "${windowPeriod}")
 
-from(bucket: "redstone")
+from(bucket: "core-mean")
   |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
   |> filter(fn: (r) =>
     r.signerAddress == signerAddress and

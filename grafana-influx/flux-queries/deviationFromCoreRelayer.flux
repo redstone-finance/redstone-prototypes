@@ -1,20 +1,24 @@
 import "strings"
 
-v = {timeRangeStart: -3d, timeRangeStop: -1m}
+v = {timeRangeStart: -4d, timeRangeStop: -1m}
 
-windowPeriodString = "30m"
+windowPeriodString = "20m"
 windowPeriod = duration(v: windowPeriodString)
 // windowPeriod = duration(v: "${windowPeriod}")
 
-filterPeriod = 5m
+filterPeriod = 20m
 
 calculateDeviationPercentage = (value1, value2) => {
   return (value1 - value2) / value2 * 100.0
 }
 
-valueStream = from(bucket: "redstone")
+valueStream = from(bucket: "core-mean")
   |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
-  |> filter(fn: (r) => r["_measurement"] == "dataPackages" and r["_field"] == "value")
+  |> filter(fn: (r) =>
+    r._measurement == "dataPackages" and
+    r._field == "value" and
+    r.dataFeedId != "___ALL_FEEDS___"
+  )
   |> keep(columns: ["_time", "_value", "dataFeedId", "dataServiceId"])
   |> aggregateWindow(every: filterPeriod, fn: mean, createEmpty: false)
   |> keep(columns: ["_time", "_value", "dataFeedId", "dataServiceId"])
@@ -30,7 +34,6 @@ relayerStream = from(bucket: "redstone")
   |> map(fn: (r) => ({r with dataFeedId: strings.substring(v: r._field, start: 6, end: 30)}))
   |> keep(columns: ["_time", "_value", "dataFeedId", "relayerName" ])
   |> group(columns: ["dataFeedId"])
-
 
 joined = join(
   tables: {r: relayerStream, v: valueStream},
