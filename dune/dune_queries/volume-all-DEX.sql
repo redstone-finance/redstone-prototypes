@@ -41,7 +41,6 @@ SELECT
     volume_7d.blockchain,
     volume_7d.project,
     volume_7d.version,
-    volume_7d.project_contract_address,
     CASE 
         WHEN "amount_usd_24h" IS NULL THEN 0
         ELSE "amount_usd_24h"
@@ -49,7 +48,8 @@ SELECT
     CASE 
         WHEN "amount_usd_7d" IS NULL THEN 0
         ELSE "amount_usd_7d"
-    END AS "7d volume $"
+    END AS "7d volume $",
+    volume_7d.project_contract_address
 FROM volume_7d
 LEFT JOIN volume_24h on volume_24h."project_contract_address" = volume_7d."project_contract_address" and volume_24h.blockchain = volume_7d.blockchain and volume_24h.project = volume_7d.project and volume_24h.version = volume_7d.version
 ORDER BY rank ASC
