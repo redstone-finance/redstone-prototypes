@@ -1,3 +1,4 @@
+// TODO: fix the parser
 // TODO: divide into modules, optimize the code (refactor, promise.all etc)
 
 // TODO: add support for multiple chains
@@ -166,28 +167,29 @@ async function findTransactionsWithMarker(rpcUrl, startBlockNumber, influx) {
           const fullTx = await provider.getTransactionReceipt(tx.hash);
           // console.log(fullTx);
           const { txPreparationTimestamp, values } =
-            getTxPreparationTimestampAndValues(tx);
+            getTxPreparationTimestampAndValues(tx); //TODO: debug parser //TODO: need tx.input
 
           console.log(txPreparationTimestamp);
           console.log(values);
 
-          const relayer = relayers.find(
-            (relayer) => relayer.address === tx.to
-          );
+          const relayer = relayers.find((relayer) => relayer.address === tx.to);
+
+          const txData = tx.data.substring(0, 10); // First 4 bytes of data
 
           // TODO: full formatting
           formattedTx = {
             timestamp: Number(blockData.timestamp) * 1000,
-            // gas: Number(transaction.gas), ??
+            gas: Number(blockData.gasLimit), //TODO: make sure it's equivalent to gas.
             gasPrice: Number(tx.gasPrice), //or fullTx.effectiveGasPrice
             gasUsed: Number(fullTx.gasUsed),
             cumulativeGasUsed: Number(fullTx.cumulativeGasUsed),
             from: fullTx.from,
-            // isFailed: transaction.isError === "0", //TODO: from status if 0 then failed?
+            isFailed: fullTx.status === 0, // isFailed: transaction.isError === "0" //TODO: make sure it's equivalent to
             // txPreparationTimestamp: txPreparationTimestamp,
             chainName: relayer.chainName,
             relayer: relayer.name,
             // values: values,
+            txData: txData,
           };
           // txListWithTimestamp.push({ ...formattedTX});
 
@@ -220,9 +222,10 @@ function mapToInfluxDbRequest(transaction) {
     ? ""
     : `txPreparationTimestamp=${transaction.txPreparationTimestamp},`;
   let fields =
-    `gas=${transaction.gas},` + 
-    `gasPrice=${transaction.gasPrice},` + 
+    `gas=${transaction.gas},` +
+    `gasPrice=${transaction.gasPrice},` +
     `gasUsed=${transaction.gasUsed},` +
+    `txData=${transaction.txData},` +
     txPreparationTimestampField + // txPreparationTimestamp from EVM connector
     `cumulativeGasUsed=${transaction.cumulativeGasUsed}`; // total amount of gas used when this transaction was executed in the block
 
@@ -246,7 +249,7 @@ async function saveInInfluxDb(influxDbUrl, influxDbToken, transactions) {
 }
 
 function getTxPreparationTimestampAndValues(transaction) {
-  const txCalldataBytes = arrayify(transaction.data); //TODO: probably data instead of input
+  const txCalldataBytes = arrayify(transaction.data); //TODO: fix a parser
   const parsingResult = redstone.RedstonePayload.parse(txCalldataBytes);
   const unsignedMetadata = toUtf8String(parsingResult.unsignedMetadata);
   return {
