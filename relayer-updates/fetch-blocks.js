@@ -1,51 +1,76 @@
+// TODO: divide into modules, optimize the code (refactor, promise.all etc)
+
+// TODO: add support for multiple chains
+const redstone = require("redstone-protocol");
 const ethers = require("ethers");
-const { InfluxDB } = require("influx");
+const { arrayify, toUtf8String } = require("ethers/lib/utils");
+const axios = require("axios");
 
-// const influx = new InfluxDB({
-//   url: influxDbUrl,
-//   token: influxDbToken,
-//   org: "redstone",
-//   timeout: 1 * 60 * 1000, // 1 minute
-// });
+// TODO: map addresses to relayers imported from separate file (or manifest etc)
+const relayers = [
+  {
+    name: "swell",
+    chainName: "arbitrum",
+    address: "0x35A499B170fA8dB973FA4998d76B260fA234c228",
+  },
+  {
+    name: "voltz",
+    chainName: "arbitrum",
+    address: "0x35A499B170fA8dB973FA4998d76B260fA234c228",
+  },
+];
 
-async function gatLastSynchronizedBlock(influx) {
-  try {
-    const query = `
-      from(bucket: "redstone")
-        |> range(start: -1d)
-        |> filter(fn: (r) => r._field == "blockNumber") //TODO: maybe change to blockNumberRPC or blockNumberArbitrum
-        |> max() //TODO: test if not working use limit(1) and fn: max OR use last()
-    `;
+async function getLastSynchronizedBlock(influx) {
+  const query = `from(bucket: "redstone")
+    |> range(start: -1h)
+    |> filter(fn: (r) => r._measurement == "last_synchronized_block")
+    |> last()
+    |> keep(columns: ["_value"])`;
 
-    const result = await influx.queryFlux(query);
+  const config = {
+    headers: {
+      Authorization: `Token ${influx.influxDbToken}`,
+      "Content-Type": "application/vnd.flux",
+    },
+    responseType: "json",
+  };
 
-    console.log(result[0]._value);
-    return result[0]._value;
+  const response = await axios.post(
+    `${influx.influxDbUrl}/api/v2/query?org=redstone&bucket=redstone`,
+    query,
+    config
+  );
 
-  } catch (error) {
-    console.error("Error executing Flux query:", error);
-  }
+  const data = response.data;
+  const startIndex = data.indexOf("0,");
+  const valuePart = data.substring(startIndex + 2);
+  const lastSynchronizedBlock = Number(valuePart);
+  return lastSynchronizedBlock;
 }
 
 async function saveLastSynchronizedBlock(influx, blockNumber) {
-  try {
-    const point = new Point("last_synchronized_block")
-      .tag("_field", "blockNumber")
-      .floatField("_value", blockNumber);
+  const measurement = "last_synchronized_block";
+  const tags = "blockNumber=blockNumber"; //TODO: maybe blockNumberArb, blockNumberEth etc...
+  const fields = `_value=${blockNumber}`;
+  const timestamp = new Date().getTime();
 
-    const writeApi = influx.getWriteApi("redstone", "redstone", "s");
+  const requestData = [`${measurement},${tags} ${fields} ${timestamp}`];
 
-    writeApi.writePoint(point);
-    await writeApi.flush();
-    writeApi.close();
-
-    console.log(`Last synchronized block (${blockNumber}) saved to InfluxDB.`);
-  } catch (error) {
-    console.error("Error saving last synchronized block:", error);
-  }
+  await insertIntoInfluxDb(influx, requestData);
 }
 
-
+async function insertIntoInfluxDb(influx, requestData) {
+  const config = {
+    headers: {
+      Authorization: `Token ${influx.influxDbToken}`,
+    },
+  };
+  await axios.post(
+    `${influx.influxDbUrl}/api/v2/write?org=redstone&bucket=redstone&precision=ms`,
+    requestData.join("\n"),
+    config
+  );
+}
 
 //TODO: uncomment when on AWS lambda
 // const AWS = require("aws-sdk");
@@ -105,14 +130,10 @@ async function fetchConfig() {
     influxDbTokenPromise,
   ]);
 
-  const influx = new InfluxDB({
-    url: influxDbUrl,
-    token: influxDbToken,
-    org: "redstone",
-    timeout: 1 * 60 * 1000, // 1 minute
-  });
-
-  return influx;
+  return {
+    influxDbUrl,
+    influxDbToken,
+  };
 }
 
 async function processBlocks(provider, startBlock, endBlock) {
@@ -126,13 +147,12 @@ async function processBlocks(provider, startBlock, endBlock) {
   return blocksData;
 }
 
-async function findTransactionsWithMarker(rpcUrl) {
+async function findTransactionsWithMarker(rpcUrl, startBlockNumber, influx) {
   const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
 
   const latestBlockNumber = await provider.getBlockNumber();
 
-  // TODO: get startBlock block from Influx database
-  const startBlockNumber = latestBlockNumber - 10000;
+  // const startBlockNumber = latestBlockNumber - 10000;
   const batchSize = 150;
 
   const txListWithTimestamp = [];
@@ -143,34 +163,68 @@ async function findTransactionsWithMarker(rpcUrl) {
     for (const blockData of blocksData) {
       for (const tx of blockData.transactions) {
         if (tx.data && tx.data.includes("000002ed57011e0000")) {
+          const fullTx = await provider.getTransactionReceipt(tx.hash);
+          // console.log(fullTx);
+          const { txPreparationTimestamp, values } =
+            getTxPreparationTimestampAndValues(tx);
+
+          console.log(txPreparationTimestamp);
+          console.log(values);
+
+          const relayer = relayers.find(
+            (relayer) => relayer.address === tx.to
+          );
+
+          // TODO: full formatting
+          formattedTx = {
+            timestamp: Number(blockData.timestamp) * 1000,
+            // gas: Number(transaction.gas), ??
+            gasPrice: Number(tx.gasPrice), //or fullTx.effectiveGasPrice
+            gasUsed: Number(fullTx.gasUsed),
+            cumulativeGasUsed: Number(fullTx.cumulativeGasUsed),
+            from: fullTx.from,
+            // isFailed: transaction.isError === "0", //TODO: from status if 0 then failed?
+            // txPreparationTimestamp: txPreparationTimestamp,
+            chainName: relayer.chainName,
+            relayer: relayer.name,
+            // values: values,
+          };
+          // txListWithTimestamp.push({ ...formattedTX});
+
           console.log(tx.hash);
+          console.log("Block number: " + blockData.number);
           txListWithTimestamp.push({ ...tx, timestamp: blockData.timestamp });
         }
       }
     }
   }
-  return txListWithTimestamp;
+
+  //TODO: do everything in one request
+  // await insertIntoInfluxDb(influx, requestData);
+  // await saveLastSynchronizedBlock(influx, latestBlockNumber);
+
+  return [txListWithTimestamp, latestBlockNumber];
 
   // TODO: save the last synced block number in your database
 }
 
 function mapToInfluxDbRequest(transaction) {
-  // tags that are used to narrow queried data in InfluxDb
+  // Tags that are used to narrow queried data in InfluxDb
   const tags =
-    `chainName=${transaction.chainName},` + // e.g. ethereum, avalanche
-    `relayerName=${transaction.relayer},` + // e.g. swell, voltz
-    `from=${transaction.from},` + // transaction sender address
-    `isFailed=${transaction.isFailed}`; // if transaction failed
+    `chainName=${transaction.chainName},` + // e.g. ethereum, avalanche //TODO: from chainID or relayer
+    `relayerName=${transaction.relayer},` + // e.g. swell, voltz //TODO: map using address "to" or from?
+    `from=${transaction.from},` +
+    `isFailed=${transaction.isFailed}`;
 
   const txPreparationTimestampField = isNaN(transaction.txPreparationTimestamp)
     ? ""
     : `txPreparationTimestamp=${transaction.txPreparationTimestamp},`;
   let fields =
-    `gas=${transaction.gas},` + // gas limit
-    `gasPrice=${transaction.gasPrice},` + // gas price
-    `gasUsed=${transaction.gasUsed},` + // gas used in transaction
+    `gas=${transaction.gas},` + 
+    `gasPrice=${transaction.gasPrice},` + 
+    `gasUsed=${transaction.gasUsed},` +
     txPreparationTimestampField + // txPreparationTimestamp from EVM connector
-    `cumulativeGasUsed=${transaction.cumulativeGasUsed}`; // total amount of gas used when this transactionw as executed in the block
+    `cumulativeGasUsed=${transaction.cumulativeGasUsed}`; // total amount of gas used when this transaction was executed in the block
 
   const values = transaction.values;
   if (values) {
@@ -179,22 +233,9 @@ function mapToInfluxDbRequest(transaction) {
     });
   }
 
-  const timestamp = transaction.timestamp; // timestamp of transaction
+  const timestamp = transaction.timestamp;
 
   return `onChainRelayersTransactions,${tags} ${fields} ${timestamp}`;
-}
-
-async function insertIntoInfluxDb(influxDbUrl, influxDbToken, requestData) {
-  const config = {
-    headers: {
-      Authorization: `Token ${influxDbToken}`,
-    },
-  };
-  await axios.post(
-    `${influxDbUrl}/api/v2/write?org=redstone&bucket=redstone&precision=ms`,
-    requestData.join("\n"),
-    config
-  );
 }
 
 async function saveInInfluxDb(influxDbUrl, influxDbToken, transactions) {
@@ -204,10 +245,56 @@ async function saveInInfluxDb(influxDbUrl, influxDbToken, transactions) {
   await insertIntoInfluxDb(influxDbUrl, influxDbToken, requestData);
 }
 
+function getTxPreparationTimestampAndValues(transaction) {
+  const txCalldataBytes = arrayify(transaction.data); //TODO: probably data instead of input
+  const parsingResult = redstone.RedstonePayload.parse(txCalldataBytes);
+  const unsignedMetadata = toUtf8String(parsingResult.unsignedMetadata);
+  return {
+    txPreparationTimestamp: Number(
+      unsignedMetadata.substring(0, unsignedMetadata.indexOf("#"))
+    ),
+    values: getTxValues(parsingResult),
+  };
+}
+
+function getTxValues(parsingResult) {
+  const feedIdToValues = {};
+  parsingResult.signedDataPackages.flatMap((signedDataPackage) =>
+    signedDataPackage.dataPackage.dataPoints.map((numericDataPoint) => {
+      const { dataFeedId, value } = numericDataPoint.numericDataPointArgs;
+      feedIdToValues[dataFeedId] = (feedIdToValues[dataFeedId] || []).concat(
+        value
+      );
+    })
+  );
+
+  const values = Object.fromEntries(
+    Object.entries(feedIdToValues).map(([feedId, valuesArray]) => [
+      `value-${feedId}`,
+      getMedianForFeedId(valuesArray),
+    ])
+  );
+
+  return values;
+}
+
+function getMedianForFeedId(values) {
+  values.sort();
+  const middle = Math.floor(values.length / 2);
+  if (values.length % 2 === 0) {
+    return (values[middle - 1] + values[middle]) / 2;
+  } else {
+    return values[middle];
+  }
+}
+
 exports.handler = async (event, context) => {
   const influx = await fetchConfig();
-  const lastSynchronizedBlock = await gatLastSynchronizedBlock(influx);
+  await saveLastSynchronizedBlock(influx, 148325599);
+  const lastSynchronizedBlock = await getLastSynchronizedBlock(influx);
+  console.log(lastSynchronizedBlock);
 
+  // TODO: use multiple chains in the future
   const rpcUrls = [
     // "https://arbitrum-one.blastapi.io/6ebaff4b-205e-4027-8cdc-10c3bacc8abb",
     // "https://arb1.arbitrum.io/rpc",
@@ -216,20 +303,24 @@ exports.handler = async (event, context) => {
   ];
 
   const allTransactions = [];
+  const latestBlocks = [];
 
   for (const rpcUrl of rpcUrls) {
-    const txListWithTimestamp = await findTransactionsWithMarker(rpcUrl); //TODO: add start block as a parameter
+    const [txListWithTimestamp, latestBlockNumber] =
+      await findTransactionsWithMarker(rpcUrl, lastSynchronizedBlock, influx); //TODO: add start block as a parameter
     allTransactions.push(...txListWithTimestamp);
+    latestBlocks.push(latestBlockNumber);
   }
 
   console.log(allTransactions.length);
   console.log(allTransactions);
+  console.log(latestBlocks);
 
-  // await saveInInfluxDb(
-  //   config.influxDbUrl,
-  //   config.influxDbToken,
-  //   allTransactions
-  // );
+  // map each transaction to InfluxDb request
+  const requestData = txListWithTimestamp.map((tx) => mapToInfluxDbRequest(tx));
+
+  await saveInInfluxDb(config.influxDbUrl, config.influxDbToken, requestData);
+  await saveLastSynchronizedBlock(influx, latestBlocks[0]); //TODO: maybe different logic for different chains...
 
   return {
     statusCode: 200,
@@ -238,6 +329,44 @@ exports.handler = async (event, context) => {
 };
 
 exports.handler();
+
+// {
+//   to: '0xE75B3cB56Ae6D27e29aE8Aaba48FfA1328116061',
+//   from: '0x48fb8b4BAb194b74Cb8aF3f97f2df059e534bfdB',
+//   contractAddress: null,
+//   transactionIndex: 2,
+//   gasUsed: BigNumber { _hex: '0x425261', _isBigNumber: true },
+//   blockHash: '0x2b521edcefaa5bb7b8ffe787da49e400a498a147ad31a640aa5cfc780177535f',
+//   transactionHash: '0x0b0b125313c75f833a0a9075025b3e95eb8aea36b7994ea73cc82e58898b08f8',
+//   blockNumber: 148325599,
+//   confirmations: 32286,
+//   cumulativeGasUsed: BigNumber { _hex: '0x49dc03', _isBigNumber: true },
+//   effectiveGasPrice: BigNumber { _hex: '0x05f5e100', _isBigNumber: true },
+//   status: 1,
+//   type: 2,
+//   byzantium: true
+// }
+
+// {
+//     hash: '0x63f17ed5b2dcfd8732e39bdb20f0e3cffc3068c082457b4543cbdcfb9b774f15',,
+//     blockHash: '0x1242d1eea2c5705951f7c715f4029261d3c916663d5d524b96896ac382b4b0f9',
+//     from: '0x28a5314F19E59e688Cb782dd7eBc4DCA6e1376cB',
+
+//     gasPrice: BigNumber { _hex: '0x05f5e100', _isBigNumber: true },
+
+//     gasLimit: BigNumber { _hex: '0x989680', _isBigNumber: true },
+//     to: '0x35A499B170fA8dB973FA4998d76B260fA234c228',
+//     value: BigNumber { _hex: '0x00', _isBigNumber: true },
+//     nonce: 410,
+//     data: '0xc14c92040000000000000000000000000000000000000000000000000000018b668e655053574554480000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002a03141614018b668e655000000020000001018854f626f8502ce605b2ad5009a251e08a6381d5daacf2f8a4348113eb6714698720f533c5a037eb86fd7b0d72996a7b840b4013c499dfa215813081704fab1b53574554480000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002a01ee9aaf018b668e65500000002000000148500d838bfbe379c017d763436aaa837fea5160b4f963f25b04c32e6d345504169d6e6d7f2bb0256fe1dbf409f062fef57c0879f807a56baa70f4ea7d8c28211c00023136393832333237303131313323302e332e332d616c7068612e3023646174612d7061636b616765732d77726170706572000031000002ed57011e0000',
+//     r: '0x5915395547406314e137677ee76ee53dd00862472eb65a13a0826ff975e706e2',
+//     s: '0x5bef486b8c1bee6510c493a8c2380b6a7417476a978c4f813314de885a0a1f78',
+//     v: 0,
+//     creates: null,
+//     chainId: 42161,
+//     wait: [Function (anonymous)]
+//   "timestamp": 1698151891,
+//   },
 
 // 0x6bf6a42d000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011910df00000000000000000000000000000000000000000000000000000000088e0df40000000000000000000000000000000000000000000000000000000000000000;
 

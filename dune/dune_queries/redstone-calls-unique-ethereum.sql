@@ -1,9 +1,7 @@
 WITH 
     ethereum_calls as (
         SELECT
-            DATE_TRUNC({{time_granularity}}, block_time) as "date",
-            "from",
-            COUNT(DISTINCT tx_hash) as "txns"
+            DISTINCT("from")
         FROM
             ethereum.traces tr
         WHERE
@@ -22,7 +20,6 @@ WITH
                 0x668a0f02, -- latestRound()
                 0x50d25bcd -- latestAnswer()
             )
-        GROUP BY 1, 2
     )
     
     , from_table as (
@@ -36,15 +33,11 @@ WITH
     )
     
 SELECT
-    ec."date",
     ec."from",
-    COALESCE(ft."name", '????') as "Project Name",
-    ec."txns"
+    COALESCE(ft."name", '????') as "Project Name"
 FROM
     ethereum_calls ec
 LEFT JOIN
     from_table ft
 ON
     ec."from" = ft."from"
-ORDER BY
-    date, txns
