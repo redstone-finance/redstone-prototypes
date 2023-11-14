@@ -10,10 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-ssm": "^3.435.0",
+    "@redstone-finance/protocol": "^0.3.6",
     "axios": "^1.6.0",
-    "ethers": "^5.7.2",
-    "influx": "^5.9.3",
-    "influxdb-v2": "^1.0.0",
-    "redstone-protocol": "^1.0.5"
+    "ethers": "^5.7.2"
   }
 }

@@ -1,32 +1,34 @@
-// TODO: fix the parser
-// TODO: divide into modules, optimize the code (refactor, promise.all etc)
-
-// TODO: add support for multiple chains
-const redstone = require("redstone-protocol");
+// TODO: divide into modules(constants file for networks, processUtils, formatUtils, influxUtils), 
+// TODO: more try-catch, testing, optimize the code (refactor, promise.all etc)
+// TODO: switch to typescript?
+const redstone = require("@redstone-finance/protocol");
 const ethers = require("ethers");
 const { arrayify, toUtf8String } = require("ethers/lib/utils");
 const axios = require("axios");
 
-// TODO: map addresses to relayers imported from separate file (or manifest etc)
-const relayers = [
+const networks = [
   {
-    name: "swell",
     chainName: "arbitrum",
-    address: "0x35A499B170fA8dB973FA4998d76B260fA234c228",
+    rpcUrl: "https://arbitrum.meowrpc.com/",
   },
   {
-    name: "voltz",
-    chainName: "arbitrum",
-    address: "0x35A499B170fA8dB973FA4998d76B260fA234c228",
+    chainName: "ethereum",
+    rpcUrl: "https://api.zmok.io/mainnet/oaen6dy8ff6hju9k",
   },
+  {
+    chainName: "avalanche",
+    rpcUrl: "https://api.avax.network/ext/bc/C/rpc",
+  },
+  //TODO: add more chains and replace rpcUrls
 ];
 
-async function getLastSynchronizedBlock(influx) {
+async function getLastSynchronizedBlocks(influx) {
   const query = `from(bucket: "redstone")
     |> range(start: -1h)
-    |> filter(fn: (r) => r._measurement == "last_synchronized_block")
+    |> filter(fn: (r) => r._measurement == "lastSynchronizedBlock")
+    |> group(columns: ["chainName"])
     |> last()
-    |> keep(columns: ["_value"])`;
+    |> keep(columns: ["chainName", "_value"])`;
 
   const config = {
     headers: {
@@ -42,22 +44,104 @@ async function getLastSynchronizedBlock(influx) {
     config
   );
 
-  const data = response.data;
-  const startIndex = data.indexOf("0,");
-  const valuePart = data.substring(startIndex + 2);
-  const lastSynchronizedBlock = Number(valuePart);
-  return lastSynchronizedBlock;
+  const lines = response.data.split("\n");
+  const latestBlocks = {};
+  for (let i = 1; i < lines.length - 2; i++) {
+    // first line is header, last 2 lines are empty
+    const line = lines[i];
+    const columns = line.split(",");
+    const chainName = columns[4].trim();
+    const blockNumber = parseInt(columns[3].trim());
+    latestBlocks[chainName] = blockNumber;
+  }
+  return latestBlocks;
 }
 
-async function saveLastSynchronizedBlock(influx, blockNumber) {
-  const measurement = "last_synchronized_block";
-  const tags = "blockNumber=blockNumber"; //TODO: maybe blockNumberArb, blockNumberEth etc...
-  const fields = `_value=${blockNumber}`;
-  const timestamp = new Date().getTime();
+const { SSMClient, GetParameterCommand } = require("@aws-sdk/client-ssm");
+const client = new SSMClient({ region: "eu-west-1" });
 
-  const requestData = [`${measurement},${tags} ${fields} ${timestamp}`];
+async function getSSMParameterValue(parameterName) {
+  const command = new GetParameterCommand({
+    Name: parameterName,
+    WithDecryption: true,
+  });
+  return (await client.send(command)).Parameter.Value;
+}
 
-  await insertIntoInfluxDb(influx, requestData);
+async function fetchConfig() {
+  const influxDbUrlPromise = getSSMParameterValue("/dev/influxdb/url");
+  const influxDbTokenPromise = getSSMParameterValue("/dev/influxdb/token");
+
+  const [influxDbUrl, influxDbToken] = await Promise.all([
+    influxDbUrlPromise,
+    influxDbTokenPromise,
+  ]);
+
+  return {
+    influxDbUrl,
+    influxDbToken,
+  };
+}
+
+async function processBlocks(provider, startBlock, endBlock) {
+  const blockPromises = [];
+  for (let blockNumber = startBlock; blockNumber <= endBlock; blockNumber++) {
+    const blockPromise = provider.getBlockWithTransactions(blockNumber);
+    blockPromises.push(blockPromise);
+  }
+  const blocksData = await Promise.all(blockPromises);
+  return blocksData;
+}
+
+function formatTransaction(blockData, tx, fullTx, chainName) {
+  const { txPreparationTimestamp, values } =
+    getTxPreparationTimestampAndValues(tx);
+  const txData = tx.data.substring(0, 10); // First 4 bytes of data
+
+  return {
+    timestamp: Number(blockData.timestamp) * 1000,
+    gas: Number(blockData.gasLimit), // TODO: make sure it's equivalent to gas.
+    gasPrice: Number(tx.gasPrice), // or fullTx.effectiveGasPrice
+    gasUsed: Number(fullTx.gasUsed),
+    cumulativeGasUsed: Number(fullTx.cumulativeGasUsed),
+    from: fullTx.from,
+    isFailed: fullTx.status === 0, // isFailed: transaction.isError === "0" // TODO: make sure it's equivalent
+    txPreparationTimestamp: txPreparationTimestamp,
+    chainName: chainName,
+    adapterContract: tx.to,
+    values: values,
+    txData: txData,
+  };
+}
+
+async function findTransactionsWithMarker(rpcUrl, chainName, startBlockNumber) {
+  const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+
+  const latestBlockNumber = await provider.getBlockNumber();
+  const batchSize = 150;
+
+  const txListWithTimestamp = [];
+  for (let i = startBlockNumber; i <= latestBlockNumber; i += batchSize) {
+    const endBlock = Math.min(i + batchSize - 1, latestBlockNumber);
+    const blocksData = await processBlocks(provider, i, endBlock);
+
+    for (const blockData of blocksData) {
+      for (const tx of blockData.transactions) {
+        if (tx.data && tx.data.includes("000002ed57011e0000")) {
+          const fullTx = await provider.getTransactionReceipt(tx.hash);
+          const formattedTx = formatTransaction(
+            blockData,
+            tx,
+            fullTx,
+            chainName
+          );
+          txListWithTimestamp.push({ ...formattedTx });
+          // console.log(formattedTx);
+        }
+      }
+    }
+  }
+  return [txListWithTimestamp, latestBlockNumber];
 }
 
 async function insertIntoInfluxDb(influx, requestData) {
@@ -73,7 +157,152 @@ async function insertIntoInfluxDb(influx, requestData) {
   );
 }
 
-//TODO: uncomment when on AWS lambda
+function mapTxToInfluxDbRequest(transaction) {
+  // Tags that are used to narrow queried data in InfluxDb
+  const tags =
+    `chainName=${transaction.chainName},` + // e.g. ethereum, avalanche
+    `relayerName=${transaction.relayer},` + // e.g. swell, voltz //TODO: map using address "to" or from?
+    `from=${transaction.from},` +
+    `isFailed=${transaction.isFailed}`;
+
+  const txPreparationTimestampField = isNaN(transaction.txPreparationTimestamp)
+    ? ""
+    : `txPreparationTimestamp=${transaction.txPreparationTimestamp},`;
+  let fields =
+    `gas=${transaction.gas},` +
+    `gasPrice=${transaction.gasPrice},` +
+    `gasUsed=${transaction.gasUsed},` +
+    `txData=${transaction.txData},` +
+    txPreparationTimestampField + // txPreparationTimestamp from EVM connector
+    `cumulativeGasUsed=${transaction.cumulativeGasUsed}`; // total amount of gas used when this transaction was executed in the block
+
+  const values = transaction.values;
+  if (values) {
+    Object.keys(values).forEach((key) => {
+      fields += `,${key}=${values[key]}`; // values of data feeds
+    });
+  }
+
+  const timestamp = transaction.timestamp;
+  return `onChainRelayersTransactions,${tags} ${fields} ${timestamp}`;
+}
+
+function mapBlockToInfluxDbRequest(block) {
+  const tags = `chainName=${block.chainName}`;
+  const fields = `_value=${block.latestBlockNumber}`;
+  const timestamp = new Date().getTime();
+  return `lastSynchronizedBlock,${tags} ${fields} ${timestamp}`;
+}
+
+async function saveInInfluxDb(influx, transactions, lastSynchronizedBlocks) {
+  const transactionsRequest = transactions.map((transaction) =>
+    mapTxToInfluxDbRequest(transaction)
+  );
+  const lastSynchronizedBlocksRequest = lastSynchronizedBlocks.map((block) =>
+    mapBlockToInfluxDbRequest(block)
+  );
+  const requestData = transactionsRequest.concat(lastSynchronizedBlocksRequest);
+  await insertIntoInfluxDb(influx, requestData);
+}
+
+function getTxPreparationTimestampAndValues(transaction) {
+  const parsingResult = redstone.RedstonePayload.parse(
+    arrayify(transaction.data)
+  );
+  const unsignedMetadata = toUtf8String(parsingResult.unsignedMetadata);
+  return {
+    txPreparationTimestamp: Number(
+      unsignedMetadata.substring(0, unsignedMetadata.indexOf("#"))
+    ),
+    values: getTxValues(parsingResult),
+  };
+}
+
+function getTxValues(parsingResult) {
+  const feedIdToValues = {};
+  parsingResult.signedDataPackages.flatMap((signedDataPackage) =>
+    signedDataPackage.dataPackage.dataPoints.map((numericDataPoint) => {
+      const { dataFeedId, value } = numericDataPoint;
+      const numberValue = Number(
+        //TODO: maybe use BigInt or shift by eg. 8 decimals?
+        value.reduce((acc, byte) => (acc << 8n) + BigInt(byte), 0n)
+      );
+      feedIdToValues[dataFeedId] = (feedIdToValues[dataFeedId] || []).concat(
+        numberValue
+      );
+    })
+  );
+
+  const values = Object.fromEntries(
+    Object.entries(feedIdToValues).map(([feedId, valuesArray]) => [
+      `value-${feedId}`,
+      getMedianForFeedId(valuesArray),
+    ])
+  );
+
+  return values;
+}
+
+function getMedianForFeedId(values) {
+  values.sort();
+  const middle = Math.floor(values.length / 2);
+  if (values.length % 2 === 0) {
+    return (values[middle - 1] + values[middle]) / 2;
+  } else {
+    return values[middle];
+  }
+}
+
+exports.handler = async (event, context) => {
+  const influx = await fetchConfig();
+  // const fakeLatestBlocks = [
+  //   { chainName: "arbitrum", latestBlockNumber: 148325599 },
+  //   { chainName: "ethereum", latestBlockNumber: 18571144 },
+  //   { chainName: "avalanche", latestBlockNumber: 37758428 },
+  // ];
+  // const allTransactionsFake = [];
+  // await saveInInfluxDb(influx, allTransactionsFake, fakeLatestBlocks);
+
+  //TODO: first add current blocks to influx, then schedule the lambda to run every 20 minutes
+  const lastSynchronizedBlocks = await getLastSynchronizedBlocks(influx);
+
+  const allTransactions = [];
+  const latestBlocks = [];
+  await Promise.all(
+    networks.map((network) =>
+      findTransactionsWithMarker(
+        network.rpcUrl,
+        network.chainName,
+        lastSynchronizedBlocks[network.chainName]
+      ).then(([txListWithTimestamp, latestBlockNumber]) => {
+        allTransactions.push(...txListWithTimestamp);
+        latestBlocks.push({
+          chainName: network.chainName,
+          latestBlockNumber: latestBlockNumber,
+        });
+      })
+    )
+  );
+
+  saveInInfluxDb(influx, allTransactions, latestBlocks);
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify({ message: "Sync process completed." }),
+  };
+};
+
+exports.handler();
+
+// const rpcUrls = [
+//   // "https://arbitrum-one.blastapi.io/6ebaff4b-205e-4027-8cdc-10c3bacc8abb",
+//   // "https://arb1.arbitrum.io/rpc",
+//   // "https://arb-mainnet-public.unifra.io",
+//   "https://arbitrum.meowrpc.com/",
+// ];
+// arbitrum, ethereum, avalanche, kava, celo ...
+
+// TODO: uncomment when on AWS lambda if used there
 // const AWS = require("aws-sdk");
 // const ssm = new AWS.SSM();
 
@@ -110,405 +339,3 @@ async function insertIntoInfluxDb(influx, requestData) {
 
 //   return influx;
 // }
-
-const { SSMClient, GetParameterCommand } = require("@aws-sdk/client-ssm");
-const client = new SSMClient({ region: "eu-west-1" });
-
-async function getSSMParameterValue(parameterName) {
-  const command = new GetParameterCommand({
-    Name: parameterName,
-    WithDecryption: true,
-  });
-  return (await client.send(command)).Parameter.Value;
-}
-
-async function fetchConfig() {
-  const influxDbUrlPromise = getSSMParameterValue("/dev/influxdb/url");
-  const influxDbTokenPromise = getSSMParameterValue("/dev/influxdb/token");
-
-  const [influxDbUrl, influxDbToken] = await Promise.all([
-    influxDbUrlPromise,
-    influxDbTokenPromise,
-  ]);
-
-  return {
-    influxDbUrl,
-    influxDbToken,
-  };
-}
-
-async function processBlocks(provider, startBlock, endBlock) {
-  const blockPromises = [];
-  for (let blockNumber = startBlock; blockNumber <= endBlock; blockNumber++) {
-    const blockPromise = provider.getBlockWithTransactions(blockNumber);
-    blockPromises.push(blockPromise);
-  }
-  const blocksData = await Promise.all(blockPromises);
-
-  return blocksData;
-}
-
-async function findTransactionsWithMarker(rpcUrl, startBlockNumber, influx) {
-  const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
-
-  const latestBlockNumber = await provider.getBlockNumber();
-
-  // const startBlockNumber = latestBlockNumber - 10000;
-  const batchSize = 150;
-
-  const txListWithTimestamp = [];
-  for (let i = startBlockNumber; i <= latestBlockNumber; i += batchSize) {
-    const endBlock = Math.min(i + batchSize - 1, latestBlockNumber);
-    const blocksData = await processBlocks(provider, i, endBlock);
-
-    for (const blockData of blocksData) {
-      for (const tx of blockData.transactions) {
-        if (tx.data && tx.data.includes("000002ed57011e0000")) {
-          const fullTx = await provider.getTransactionReceipt(tx.hash);
-          // console.log(fullTx);
-          const { txPreparationTimestamp, values } =
-            getTxPreparationTimestampAndValues(tx); //TODO: debug parser //TODO: need tx.input
-
-          console.log(txPreparationTimestamp);
-          console.log(values);
-
-          const relayer = relayers.find((relayer) => relayer.address === tx.to);
-
-          const txData = tx.data.substring(0, 10); // First 4 bytes of data
-
-          // TODO: full formatting
-          formattedTx = {
-            timestamp: Number(blockData.timestamp) * 1000,
-            gas: Number(blockData.gasLimit), //TODO: make sure it's equivalent to gas.
-            gasPrice: Number(tx.gasPrice), //or fullTx.effectiveGasPrice
-            gasUsed: Number(fullTx.gasUsed),
-            cumulativeGasUsed: Number(fullTx.cumulativeGasUsed),
-            from: fullTx.from,
-            isFailed: fullTx.status === 0, // isFailed: transaction.isError === "0" //TODO: make sure it's equivalent to
-            // txPreparationTimestamp: txPreparationTimestamp,
-            chainName: relayer.chainName,
-            relayer: relayer.name,
-            // values: values,
-            txData: txData,
-          };
-          // txListWithTimestamp.push({ ...formattedTX});
-
-          console.log(tx.hash);
-          console.log("Block number: " + blockData.number);
-          txListWithTimestamp.push({ ...tx, timestamp: blockData.timestamp });
-        }
-      }
-    }
-  }
-
-  //TODO: do everything in one request
-  // await insertIntoInfluxDb(influx, requestData);
-  // await saveLastSynchronizedBlock(influx, latestBlockNumber);
-
-  return [txListWithTimestamp, latestBlockNumber];
-
-  // TODO: save the last synced block number in your database
-}
-
-function mapToInfluxDbRequest(transaction) {
-  // Tags that are used to narrow queried data in InfluxDb
-  const tags =
-    `chainName=${transaction.chainName},` + // e.g. ethereum, avalanche //TODO: from chainID or relayer
-    `relayerName=${transaction.relayer},` + // e.g. swell, voltz //TODO: map using address "to" or from?
-    `from=${transaction.from},` +
-    `isFailed=${transaction.isFailed}`;
-
-  const txPreparationTimestampField = isNaN(transaction.txPreparationTimestamp)
-    ? ""
-    : `txPreparationTimestamp=${transaction.txPreparationTimestamp},`;
-  let fields =
-    `gas=${transaction.gas},` +
-    `gasPrice=${transaction.gasPrice},` +
-    `gasUsed=${transaction.gasUsed},` +
-    `txData=${transaction.txData},` +
-    txPreparationTimestampField + // txPreparationTimestamp from EVM connector
-    `cumulativeGasUsed=${transaction.cumulativeGasUsed}`; // total amount of gas used when this transaction was executed in the block
-
-  const values = transaction.values;
-  if (values) {
-    Object.keys(values).forEach((key) => {
-      fields += `,${key}=${values[key]}`; // values of data feeds
-    });
-  }
-
-  const timestamp = transaction.timestamp;
-
-  return `onChainRelayersTransactions,${tags} ${fields} ${timestamp}`;
-}
-
-async function saveInInfluxDb(influxDbUrl, influxDbToken, transactions) {
-  const requestData = transactions.map((transaction) =>
-    mapToInfluxDbRequest(transaction)
-  );
-  await insertIntoInfluxDb(influxDbUrl, influxDbToken, requestData);
-}
-
-function getTxPreparationTimestampAndValues(transaction) {
-  const txCalldataBytes = arrayify(transaction.data); //TODO: fix a parser
-  const parsingResult = redstone.RedstonePayload.parse(txCalldataBytes);
-  const unsignedMetadata = toUtf8String(parsingResult.unsignedMetadata);
-  return {
-    txPreparationTimestamp: Number(
-      unsignedMetadata.substring(0, unsignedMetadata.indexOf("#"))
-    ),
-    values: getTxValues(parsingResult),
-  };
-}
-
-function getTxValues(parsingResult) {
-  const feedIdToValues = {};
-  parsingResult.signedDataPackages.flatMap((signedDataPackage) =>
-    signedDataPackage.dataPackage.dataPoints.map((numericDataPoint) => {
-      const { dataFeedId, value } = numericDataPoint.numericDataPointArgs;
-      feedIdToValues[dataFeedId] = (feedIdToValues[dataFeedId] || []).concat(
-        value
-      );
-    })
-  );
-
-  const values = Object.fromEntries(
-    Object.entries(feedIdToValues).map(([feedId, valuesArray]) => [
-      `value-${feedId}`,
-      getMedianForFeedId(valuesArray),
-    ])
-  );
-
-  return values;
-}
-
-function getMedianForFeedId(values) {
-  values.sort();
-  const middle = Math.floor(values.length / 2);
-  if (values.length % 2 === 0) {
-    return (values[middle - 1] + values[middle]) / 2;
-  } else {
-    return values[middle];
-  }
-}
-
-exports.handler = async (event, context) => {
-  const influx = await fetchConfig();
-  await saveLastSynchronizedBlock(influx, 148325599);
-  const lastSynchronizedBlock = await getLastSynchronizedBlock(influx);
-  console.log(lastSynchronizedBlock);
-
-  // TODO: use multiple chains in the future
-  const rpcUrls = [
-    // "https://arbitrum-one.blastapi.io/6ebaff4b-205e-4027-8cdc-10c3bacc8abb",
-    // "https://arb1.arbitrum.io/rpc",
-    // "https://arb-mainnet-public.unifra.io",
-    "https://arbitrum.meowrpc.com/",
-  ];
-
-  const allTransactions = [];
-  const latestBlocks = [];
-
-  for (const rpcUrl of rpcUrls) {
-    const [txListWithTimestamp, latestBlockNumber] =
-      await findTransactionsWithMarker(rpcUrl, lastSynchronizedBlock, influx); //TODO: add start block as a parameter
-    allTransactions.push(...txListWithTimestamp);
-    latestBlocks.push(latestBlockNumber);
-  }
-
-  console.log(allTransactions.length);
-  console.log(allTransactions);
-  console.log(latestBlocks);
-
-  // map each transaction to InfluxDb request
-  const requestData = txListWithTimestamp.map((tx) => mapToInfluxDbRequest(tx));
-
-  await saveInInfluxDb(config.influxDbUrl, config.influxDbToken, requestData);
-  await saveLastSynchronizedBlock(influx, latestBlocks[0]); //TODO: maybe different logic for different chains...
-
-  return {
-    statusCode: 200,
-    body: JSON.stringify({ message: "Sync process completed." }),
-  };
-};
-
-exports.handler();
-
-// {
-//   to: '0xE75B3cB56Ae6D27e29aE8Aaba48FfA1328116061',
-//   from: '0x48fb8b4BAb194b74Cb8aF3f97f2df059e534bfdB',
-//   contractAddress: null,
-//   transactionIndex: 2,
-//   gasUsed: BigNumber { _hex: '0x425261', _isBigNumber: true },
-//   blockHash: '0x2b521edcefaa5bb7b8ffe787da49e400a498a147ad31a640aa5cfc780177535f',
-//   transactionHash: '0x0b0b125313c75f833a0a9075025b3e95eb8aea36b7994ea73cc82e58898b08f8',
-//   blockNumber: 148325599,
-//   confirmations: 32286,
-//   cumulativeGasUsed: BigNumber { _hex: '0x49dc03', _isBigNumber: true },
-//   effectiveGasPrice: BigNumber { _hex: '0x05f5e100', _isBigNumber: true },
-//   status: 1,
-//   type: 2,
-//   byzantium: true
-// }
-
-// {
-//     hash: '0x63f17ed5b2dcfd8732e39bdb20f0e3cffc3068c082457b4543cbdcfb9b774f15',,
-//     blockHash: '0x1242d1eea2c5705951f7c715f4029261d3c916663d5d524b96896ac382b4b0f9',
-//     from: '0x28a5314F19E59e688Cb782dd7eBc4DCA6e1376cB',
-
-//     gasPrice: BigNumber { _hex: '0x05f5e100', _isBigNumber: true },
-
-//     gasLimit: BigNumber { _hex: '0x989680', _isBigNumber: true },
-//     to: '0x35A499B170fA8dB973FA4998d76B260fA234c228',
-//     value: BigNumber { _hex: '0x00', _isBigNumber: true },
-//     nonce: 410,
-//     data: '0xc14c92040000000000000000000000000000000000000000000000000000018b668e655053574554480000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002a03141614018b668e655000000020000001018854f626f8502ce605b2ad5009a251e08a6381d5daacf2f8a4348113eb6714698720f533c5a037eb86fd7b0d72996a7b840b4013c499dfa215813081704fab1b53574554480000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002a01ee9aaf018b668e65500000002000000148500d838bfbe379c017d763436aaa837fea5160b4f963f25b04c32e6d345504169d6e6d7f2bb0256fe1dbf409f062fef57c0879f807a56baa70f4ea7d8c28211c00023136393832333237303131313323302e332e332d616c7068612e3023646174612d7061636b616765732d77726170706572000031000002ed57011e0000',
-//     r: '0x5915395547406314e137677ee76ee53dd00862472eb65a13a0826ff975e706e2',
-//     s: '0x5bef486b8c1bee6510c493a8c2380b6a7417476a978c4f813314de885a0a1f78',
-//     v: 0,
-//     creates: null,
-//     chainId: 42161,
-//     wait: [Function (anonymous)]
-//   "timestamp": 1698151891,
-//   },
-
-// 0x6bf6a42d000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011910df00000000000000000000000000000000000000000000000000000000088e0df40000000000000000000000000000000000000000000000000000000000000000;
-
-// Block data: {
-//   "hash": "0x7821972504e0d726196ec6960f964c57eff6d6b970fd6375341305516de0a272",
-//   "parentHash": "0xfad5e1c7ba4cbcc5d140ea2b9baea3e240f8a404ab101dbc92076d8c491d74c4",
-//   "number": 143541689,
-//   "timestamp": 1698151891,
-//   "nonce": "0x0000000000116b64",
-//   "difficulty": 1,
-//   "gasLimit": {
-//     "type": "BigNumber",
-//     "hex": "0x04000000000000"
-//   },
-//   "gasUsed": {
-//     "type": "BigNumber",
-//     "hex": "0x1daa59"
-//   },
-//   "miner": "0xA4b000000000000000000073657175656e636572",
-//   "extraData": "0x0ddabce0828433fbb434824cd41eb0203094ad8d95683076623e28e46a465dcd",
-//   "transactions": [
-// {
-//   "hash": "0xaef953d18efd79f05b32da14d3da22cc857fc3a5449c3f41dc1306dcfc9d4538",
-//   "type": 106,
-//   "accessList": null,
-//   "blockHash": "0x7821972504e0d726196ec6960f964c57eff6d6b970fd6375341305516de0a272",
-//   "blockNumber": 143541689,
-//   "transactionIndex": 0,
-//   "confirmations": 1,
-//   "from": "0x00000000000000000000000000000000000A4B05",
-//   "gasPrice": {
-//     "type": "BigNumber",
-//     "hex": "0x00"
-//   },
-//   "gasLimit": {
-//     "type": "BigNumber",
-//     "hex": "0x00"
-//   },
-//   "to": "0x00000000000000000000000000000000000A4B05",
-//   "value": {
-//     "type": "BigNumber",
-//     "hex": "0x00"
-//   },
-//   "nonce": 0,
-//   "data": "0x6bf6a42d0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000119120800000000000000000000000000000000000000000000000000000000088e45b90000000000000000000000000000000000000000000000000000000000000000",
-//   "r": "0x0000000000000000000000000000000000000000000000000000000000000000",
-//   "s": "0x0000000000000000000000000000000000000000000000000000000000000000",
-//   "v": 0,
-//   "creates": null,
-//   "chainId": 42161
-// },
-//     {
-//       "hash": "0x325f1a37f5163e1fff710a6d2da2f3c4fc0b245436773e5bcccf856d66c3b1ab",
-//       "type": 0,
-//       "accessList": null,
-//       "blockHash": "0x7821972504e0d726196ec6960f964c57eff6d6b970fd6375341305516de0a272",
-//       "blockNumber": 143541689,
-//       "transactionIndex": 1,
-//       "confirmations": 1,
-//       "from": "0x21C3de23d98Caddc406E3d31b25e807aDDF33633",
-//       "gasPrice": {
-//         "type": "BigNumber",
-//         "hex": "0x07270e00"
-//       },
-//       "gasLimit": {
-//         "type": "BigNumber",
-//         "hex": "0xaa3dac"
-//       },
-//       "to": "0xD56e4eAb23cb81f43168F9F45211Eb027b9aC7cc",
-//       "value": {
-//         "type": "BigNumber",
-//         "hex": "0x00"
-//       },
-//       "nonce": 400576,
-//       "data": "0xb143044b000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000006e0000000000000000000000004d73adb72bc3dd368966edd0f0b2148401a178e200000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000006538123000000000000000000000000000000000000000000000000000000000000001600000000000000000000000000000000000000000000000000000000000000084704316e500000000000000000000000000000000000000000000000000000000000000b83da1354fb15b9890d3aa68626bb2457b2d6c61c8c1f51eb24dcea66f3dbe29f3000000000000000000000000000000000000000000000000000000000000000a3da1354fb15b9890d3aa68626bb2457b2d6c61c8c1f51eb24dcea66f3dbe29f300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008242c256e2ce230e77a106b196d7243ec5189420dafad9abe5d83b30f762ee299f2c0ef6194495bda7e52892e1a659841962670e3ab304c51f9414ae99b2fa278d1c66cbb2f7a046ee17ba9d09eec1f523747d81616c5f14e81805f50eadff9ce2b52ac51eaed4ce158a69906784c3ed6f338d4d8ae87e1fb2df90fccfb0125337071c000000000000000000000000000000000000000000000000000000000000",
-//       "r": "0xd3fabeede895b802627f7becaa10385280a7b806c6e38bb90fe1c0607a176e3e",
-//       "s": "0x021d441550d4d7abcbdff3169d0f4c36a31997e3c1e33f9afe48282975ed55db",
-//       "v": 84357,
-//       "creates": null,
-//       "chainId": 42161
-//     }
-//   ],
-//   "baseFeePerGas": {
-//     "type": "BigNumber",
-//     "hex": "0x05f5e100"
-//   },
-//   "_difficulty": {
-//     "type": "BigNumber",
-//     "hex": "0x01"
-//   }
-// }
-
-// [
-//   {
-//     hash: '0x63f17ed5b2dcfd8732e39bdb20f0e3cffc3068c082457b4543cbdcfb9b774f15',
-//     type: 2,
-//     accessList: [],
-//     blockHash: '0x1242d1eea2c5705951f7c715f4029261d3c916663d5d524b96896ac382b4b0f9',
-//     blockNumber: 143845926,
-//     transactionIndex: 1,
-//     confirmations: 8630,
-//     from: '0x28a5314F19E59e688Cb782dd7eBc4DCA6e1376cB',
-//     gasPrice: BigNumber { _hex: '0x05f5e100', _isBigNumber: true },
-//     maxPriorityFeePerGas: BigNumber { _hex: '0x00', _isBigNumber: true },
-//     maxFeePerGas: BigNumber { _hex: '0x05f5e100', _isBigNumber: true },
-//     gasLimit: BigNumber { _hex: '0x989680', _isBigNumber: true },
-//     to: '0x35A499B170fA8dB973FA4998d76B260fA234c228',
-//     value: BigNumber { _hex: '0x00', _isBigNumber: true },
-//     nonce: 410,
-//     data: '0xc14c92040000000000000000000000000000000000000000000000000000018b668e655053574554480000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002a03141614018b668e655000000020000001018854f626f8502ce605b2ad5009a251e08a6381d5daacf2f8a4348113eb6714698720f533c5a037eb86fd7b0d72996a7b840b4013c499dfa215813081704fab1b53574554480000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002a01ee9aaf018b668e65500000002000000148500d838bfbe379c017d763436aaa837fea5160b4f963f25b04c32e6d345504169d6e6d7f2bb0256fe1dbf409f062fef57c0879f807a56baa70f4ea7d8c28211c00023136393832333237303131313323302e332e332d616c7068612e3023646174612d7061636b616765732d77726170706572000031000002ed57011e0000',
-//     r: '0x5915395547406314e137677ee76ee53dd00862472eb65a13a0826ff975e706e2',
-//     s: '0x5bef486b8c1bee6510c493a8c2380b6a7417476a978c4f813314de885a0a1f78',
-//     v: 0,
-//     creates: null,
-//     chainId: 42161,
-//     wait: [Function (anonymous)]
-//   },
-// {
-//   hash: '0x4bdf16e1adf0a6f5660f091a54a373c7833a8e71939e863b66b035d29f3d649f',
-//   type: 2,
-//   accessList: [],
-//   blockHash: '0x8e225a2d4361700a6e657127fd364027ced248b119f88235b363c486d346c66a',
-//   blockNumber: 143849637,
-//   transactionIndex: 2,
-//   confirmations: 5127,
-//   from: '0x590633C7a387F5f8260BCBFB7C58CF7eB97F370f',
-//   gasPrice: BigNumber { _hex: '0x05f5e100', _isBigNumber: true },
-//   maxPriorityFeePerGas: BigNumber { _hex: '0x00', _isBigNumber: true },
-//   maxFeePerGas: BigNumber { _hex: '0x080befc0', _isBigNumber: true },
-//   gasLimit: BigNumber { _hex: '0x2febac', _isBigNumber: true },
-//   to: '0xFf5e3dDaefF411a1dC6CcE00014e4Bca39265c20',
-//   value: BigNumber { _hex: '0x00', _isBigNumber: true },
-//   nonce: 18,
-//   data: '0x65ec1a45415242000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000054c633742414c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000013ebeb6842544300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000031cf2c9d26343525600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002d3f8a644414900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005f5cf6c44505800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000208b4c80045544800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002988e62cb346524158000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005f52d2946585300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000022c63309474c500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000630fd4a474d58000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f2c698b84a4f4500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001825cb74c494e4b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000042a3e7644c564c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000030b08f24d4f4f5f474d580000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffa3b05b4d4f4f5f53555348495f4450585f4554485f4c5000000000000000000000000000000000000000000000000000000000000000000000000000000016cca7339353555348495f4450585f4554485f4c500000000000000000000000000000000000000000000000000000000000000000000000000000000000000014a9dce2fc554e490000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001907ab0555534443000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005f5ce7f555344432e6500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005f5e50655534454000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005f5e4e859595f574f4d4245585f44414900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000606a08259595f574f4d4245585f474c50000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006792d5359595f574f4d4245585f555344432e650000000000000000000000000000000000000000000000000000000000000000000000000000000578c0eab399ac160359595f574f4d4245585f555344540000000000000000000000000000000000000000000000000000000000000000000000000000000000057eb2f4333fcc71176172624a6e724c4c50000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000053c2d166172624d7a654c4c50000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000054999d3617262536e724c4c5000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005666c5077737445544800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002f840e69c0018b669c96200000002000001d4d5c503a490e3396b61f0e3805e132a4cf071aa8d4fb8754350e8b9b8f1649d86a3b6d5d32539e77931c11df798d57b5a163a95bf5cc52464b888fbb03eeb33f1b415242000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000054c641542414c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000013ebeeac42544300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000031cf090f78043525600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002d40ca544414900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005f5cf6c44505800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000208b4c800455448000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000029884838b846524158000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005f52d4746585300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000022c638bb474c500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000630fd4a474d58000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f2c6c07f4a4f4500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001825cf64c494e4b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000042a615334c564c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000030b09324d4f4f5f474d580000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffa3b55b4d4f4f5f53555348495f4450585f4554485f4c5000000000000000000000000000000000000000000000000000000000000000000000000000000016ccabce6553555348495f4450585f4554485f4c500000000000000000000000000000000000000000000000000000000000000000000000000000000000000014a9bd2a21554e490000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001907ab0555534443000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005f5c69a555344432e6500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005f5dc5c55534454000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005f5e4e859595f574f4d4245585f44414900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000606a08259595f574f4d4245585f474c50000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006792d5359595f574f4d4245585f555344432e650000000000000000000000000000000000000000000000000000000000000000000000000000000578c10d84c31d660b59595f574f4d4245585f555344540000000000000000000000000000000000000000000000000000000000000000000000000000000000057eb3daae4de54aa26172624a6e724c4c50000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000053c2d166172624d7a654c4c50000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000054999d3617262536e724c4c5000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005666c5077737445544800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002f83ef0ae3018b669c96200000002000001d24315df0f592dd591fe22f9d91e573ac317e4b8f713d0fd6b3a80dea89ba57a024f87db31ba64939de49ad073736b14fd87b1b4ba23314d6ed6fa1c820c473da1c415242000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000054c297d42414c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000013ebeeac42544300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000031cead5c7e443525600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002d3f91d44414900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005f5cee5445058000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002081c3180455448000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000029884838b846524158000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005f52a4946585300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000022c4b219474c500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000630fd4a474d58000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f2c5e65f4a4f450000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000182496c4c494e4b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000042a3cb3f4c564c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000030a81a64d4f4f5f474d580000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ff9c0a6e4d4f4f5f53555348495f4450585f4554485f4c5000000000000000000000000000000000000000000000000000000000000000000000000000000016ccb2ea7a53555348495f4450585f4554485f4c500000000000000000000000000000000000000000000000000000000000000000000000000000000000000014a693d14e554e49000000000000000000000000000000000000000000000000000000000000000000000000'... 1726 more characters,
-//   r: '0xddf222dc77c1b47d6373e33402e195aa31e5ef40708824a2d93d26ee283f19af',
-//   s: '0x55f872547de91578651026697e7328251d1ad50cd537605332d0069481e64cd6',
-//   v: 0,
-//   creates: null,
-//   chainId: 42161,
-//   wait: [Function (anonymous)]
-// }
-// ]
