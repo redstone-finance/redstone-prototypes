@@ -1,0 +1,14 @@
+{
+  "name": "gas-costs-manta",
+  "version": "1.0.0",
+  "description": "",
+  "main": "calculateGasCostsManta.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@redstone-finance/protocol": "^0.3.6"
+  }
+}
