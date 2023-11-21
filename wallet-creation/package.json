@@ -1,0 +1,14 @@
+{
+  "name": "wallet-creation",
+  "version": "1.0.0",
+  "description": "",
+  "main": "create-wallet.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ethers": "^6.8.1"
+  }
+}
