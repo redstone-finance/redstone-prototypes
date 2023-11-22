@@ -12,19 +12,33 @@ const networks = [
 async function tester() {
   const rpcUrl = "https://pacific-rpc.manta.network/http";
   const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
-  const latestBlockNumber = await provider.getBlockNumber();
-  console.log(latestBlockNumber);
+  // const latestBlockNumber = await provider.getBlockNumber();
+  // console.log(latestBlockNumber);
 
-  // const transactionHash =
-  //   "0x0b0b125313c75f833a0a9075025b3e95eb8aea36b7994ea73cc82e58898b08f8";
+  const transactionHash =
+    "0x285ee268b873bd274e7cfaa0696557b78ca263f35031d6f5c79c0686ad9a7f44";
+  // "0x2e02241794bf913de77ab310c748921302ff3e78018831b01641e1d7e42f56d6";
+  // "0x43f5187e40cf3f85ac8d3d0239d4ceef1eb497d1bc540c7a6a2e54b44eed26d4";
+
+  //  const transactionHash =
+  //    "0x285ee268b873bd274e7cfaa0696557b78ca263f35031d6f5c79c0686ad9a7f44";
   // //get transaction data
   // const transaction = await provider.getTransaction(transactionHash);
-  // console.log(transaction);
+  const fullTx = await provider.getTransactionReceipt(transactionHash);
+
+  const gasCost = Number(fullTx.effectiveGasPrice) * Number(fullTx.gasUsed);
+  console.log("Gas Price:", fullTx.effectiveGasPrice.toString());
+  console.log("Gas Used:", fullTx.gasUsed.toString());
+  console.log("Gas Cost:", gasCost / 1e18);
+
+  // console.log(fullTx.effectiveGasPrice);
+  // console.log(fullTx.gasUsed);
+  // const result2 = redstone.RedstonePayload.parse(arrayify(transaction.data));
   // const result2 = new RedstonePayloadParser(arrayify(transaction.data)).parse();
   // console.log(result2);
 }
 
-// tester();
+tester();
 
 async function processBlocks(provider, startBlock, endBlock) {
   const blockPromises = [];
@@ -72,8 +86,12 @@ async function findTransactionsWithMarker(rpcUrl, chainName) {
     const blocksData = await processBlocks(provider, i, endBlock);
     // console.log(`Processing blocks ${i} - ${endBlock}`);
     // 20940626135068.52;
-    // 10^14/10^18=10^-4 Gwei -> 1,5*10^-4 Gwei
-    // 4 * 30 * 24 * 30 * 2.1*10^-4 = 20 Gwei = 0.75 USD
+    // 0.000340945511364850;
+    // 340945511364850/10^18 = 3.4*10^-3 Gwei
+    // 30*24*30*3.4*10^-4 = 7.5 Gwei = 0.25 USD
+
+    // 10^13/10^18=10^-5 Gwei -> 1,5*10^-5 Gwei
+    // 4 * 30 * 24 * 30 * 2.1*10^-5 = 2 Gwei = 0.075 USD
     for (const blockData of blocksData) {
       for (const tx of blockData.transactions) {
         const fullTx = await provider.getTransactionReceipt(tx.hash);
@@ -165,4 +183,4 @@ exports.handler = async (event, context) => {
   };
 };
 
-exports.handler();
+// exports.handler();
