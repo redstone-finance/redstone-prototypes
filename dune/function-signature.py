@@ -3,7 +3,9 @@ import os
 from dotenv import load_dotenv
 
 # Replace with the function name and its parameters (types)
-function_signature = "getRoundData(uint80)"
+function_signature = "tokensPerStEth()"
+# "stEthPerToken()"
+# "getRoundData(uint80)"
 
 load_dotenv()
 infura_api_key = os.environ["INFURA_API_KEY"]
