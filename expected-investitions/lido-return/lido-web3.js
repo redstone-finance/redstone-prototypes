@@ -62,25 +62,18 @@ async function readFunctionValueAtBlock(targetBlockNumber, retryCount = 5) {
           hour: "numeric",
           minute: "numeric",
         }).format(date);
-        // const formattedDate = date.toLocaleString();
         const result = await contract.methods
           .stEthPerToken()
           .call(null, targetBlockNumber);
-        //   console.log(
-        //     `Function value at block ${targetBlockNumber} (${formattedDate}):`,
-        //     fromWei(result, "ether").toString()
-        //   );
         return {
           value: fromWei(result, "ether"),
           date: formattedDate,
           timestamp: timestamp,
+          blockNumber: targetBlockNumber,
         };
-
-        // fromWei(result, "ether").toString();
       } else {
         console.error(`Error fetching block data. (Attempt ${i + 1})`);
         await new Promise((resolve) => setTimeout(resolve, 10000));
-        if (i === retryCount - 1) console.error(error);
       }
     } catch (error) {
       console.error(`Error reading function value (Attempt ${i + 1})`);
@@ -94,7 +87,7 @@ async function readHistoricalValues() {
   const currentBlockNumber = Number(await web3.eth.getBlockNumber());
   const averageBlockTime = await getAverageBlockTime(web3.eth);
   const blocksToCheck = [];
-  const timesPerDay = 100;
+  const timesPerDay = 3;
   const numOfDays = 9;
   for (let i = 0; i <= numOfDays * timesPerDay; i++) {
     blocksToCheck.push(
@@ -106,33 +99,41 @@ async function readHistoricalValues() {
       )
     );
   }
-  //   console.log("blocksToCheck", blocksToCheck);
   const blockValues = await Promise.all(
     blocksToCheck.map((blockNumber) => readFunctionValueAtBlock(blockNumber))
   );
-  console.log(blockValues);
-  // make a set of different values and count their occurrences
 
+  for (let i = 1; i < blockValues.length; i++) {
+    if (blockValues[i].value < blockValues[i - 1].value) {
+      // console.log(blockValues[i-1].value, blockValues[i].value);
+      // console.log(blockValues[i-1].blockNumber, blockValues[i].blockNumber);
+      // const targetValue = blockValues[i-1].value;
+      const firstBlocWithTargetValue = await binSearchBlockWithValue(
+        blockValues[i - 1].value,
+        blockValues[i].blockNumber,
+        blockValues[i - 1].blockNumber
+      );
+      console.log("firstBlocWithTargetValue", firstBlocWithTargetValue);
+    }
+  }
+
+  // console.log(blockValues);
   const uniqueValues = [...new Set(blockValues.map((item) => item.value))];
-  console.log(uniqueValues);
+  // console.log(uniqueValues);
   const uniqueValuesWithCount = uniqueValues.map((value) => {
     return {
       value: value,
       count: blockValues.filter((item) => item.value === value).length,
     };
   });
-  console.log(uniqueValuesWithCount);
+  // console.log(uniqueValuesWithCount);
 
-  console.log(uniqueValuesWithCount[0].value);
-  console.log(uniqueValuesWithCount[7].value);
-  calculateYearlyReturn(
-    uniqueValuesWithCount[7].value,
-    uniqueValuesWithCount[0].value
-  );
-
-  // console.log(blockValues[0]);
-  // console.log(blockValues[7]);
-  // calculateYearlyReturn(blockValues[7], blockValues[0]);
+  // console.log(uniqueValuesWithCount[0].value);
+  // console.log(uniqueValuesWithCount[7].value);
+  // calculateYearlyReturn(
+  //   uniqueValuesWithCount[7].value,
+  //   uniqueValuesWithCount[0].value
+  // );
 }
 
 function calculateYearlyReturn(startWeekVal, EndWeekVal) {
@@ -140,6 +141,21 @@ function calculateYearlyReturn(startWeekVal, EndWeekVal) {
   const yearlyReturn = weeklyReturn ** (365 / 7);
   console.log("weeklyReturn", weeklyReturn);
   console.log("yearlyReturn", yearlyReturn);
+}
+
+async function binSearchBlockWithValue(targetValue, startBlock, endBlock) {
+  if (endBlock == startBlock) {
+    const blockData = await readFunctionValueAtBlock(endBlock);
+    // console.log("endBlock", endBlock);
+    return blockData;
+  }
+  const middleBlock = Math.floor((startBlock + endBlock) / 2);
+  const middleBlockValue = await readFunctionValueAtBlock(middleBlock);
+  if (middleBlockValue.value < targetValue) {
+    return binSearchBlockWithValue(targetValue, middleBlock + 1, endBlock);
+  } else {
+    return binSearchBlockWithValue(targetValue, startBlock, middleBlock);
+  }
 }
 
 readHistoricalValues();

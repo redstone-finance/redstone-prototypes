@@ -1,189 +1,96 @@
-const axios = require("axios");
-const dotenv = require("dotenv");
-const redstone = require("redstone-api");
+const { Web3 } = require("web3");
 
-dotenv.config();
+const rpcUrl = "https://eth.llamarpc.com";
+const httpProvider = new Web3.providers.HttpProvider(rpcUrl);
+const web3 = new Web3(httpProvider);
 
-const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
-const ARBISCAN_API_KEY = process.env.ARBISCAN_API_KEY;
+const address = "0xd15a672319cf0352560ee76d9e89eab0889046d3";
+//fromAddress 0x889edc2edab5f40e902b864ad4d7ade8e412f9b1;
+const topics = [
+  "0xd2282bfa24f3803076af0953f1ed987d0e45edacdc20d6dce52337b1c4588cdb",
+  "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "0x000000000000000000000000ae7ab96520de3a18e5e111b5eaab095312d7fe84",
+];
 
-const blockchainExplorerMap = {
-  ethereum: {
-    explorer: "etherscan.io",
-    apiKey: ETHERSCAN_API_KEY,
-  },
-};
+// async function getTransactions() {
+//   try {
+//     const days = 15;
+//     const blockRange = days * 24 * 60 * 5; // assuming 5 blocks per minute
+//     const currentBlockNumber = Number(await web3.eth.getBlockNumber());
+//     const transactions = await web3.eth.getPastLogs({
+//       address: address,
+//       fromBlock: currentBlockNumber - blockRange,
+//       toBlock: currentBlockNumber,
+//       topics: topics,
+//     });
 
-const address = "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84";
-const network = "ethereum";
+//     console.log("Transactions:", transactions.length);
+//     transactions.forEach((transaction) => {
+//       console.log(transaction);
+//       console.log("Block Number:", Number(transaction.blockNumber));
+//       // console.log("Transaction Hash:", transaction.transactionHash);
+//     });
+//   } catch (error) {
+//     console.error("Error fetching transactions:", error);
+//   }
+// }
 
-async function cumulativeGasCost() {
-  const { explorer: blockchainExplorer, apiKey: API_KEY } =
-    blockchainExplorerMap[network];
-  const apiUrl = `https://api.${blockchainExplorer}/api?module=account&action=txlist&address=${address}&apikey=${API_KEY}`;
+// getTransactions();
 
-  try {
-    const response = await axios.get(apiUrl);
-    const transactions = response.data.result;
+async function getTransactions(fromBlock, toBlock, retryCount = 5) {
+  for (let i = 0; i < retryCount; i++) {
+    try {
+      const transactions = await web3.eth.getPastLogs({
+        address: address,
+        fromBlock: fromBlock,
+        toBlock: toBlock,
+        topics: topics,
+      });
 
-    let totalEther = 0;
-    let octoberEther = 0;
-    const differentMonths = new Set();
-    transactions.forEach((tx) => {
-      const date = new Date(parseInt(tx.timeStamp) * 1000);
-      const month = `${date.getFullYear()}-${date.getMonth() + 1}`;
-      differentMonths.add(month);
-      if (month == "2021-5") octoberEther += Number(tx.value) / 1e18;
-      const etherValue = Number(tx.value) / 1e18;
-      totalEther += etherValue;
-    });
-    console.log("Total Ether:", totalEther.toFixed(6)); // Adjust the precision as needed
-    console.log("October Ether:", octoberEther.toFixed(6)); // Adjust the precision as needed
-    console.log("Different months:", differentMonths);
+      // transactions.forEach((transaction) => {
+      //   console.log("Block Number:", Number(transaction.blockNumber));
+      //   // console.log("Transaction Hash:", transaction.transactionHash);
+      // });
 
-    // const functionNames = new Set();
-    // transactions.forEach((tx) => {
-    //   functionNames.add(tx.functionName);
-    // });
-    // console.log(functionNames);
+      //return blockNumbers
 
-    // const ethPrices = await getEthPrices(transactions);
-    // const [transactionsByMonth, cumulativeGasCostETH, cumulativeGasCostUSD] =
-    //   calculateGasCostPerMonth(transactions, ethPrices, implicitGasPrice);
-    // displayResults(
-    //   transactions,
-    //   cumulativeGasCostETH,
-    //   cumulativeGasCostUSD,
-    //   contractName,
-    //   transactionsByMonth
-    // );
-  } catch (error) {
-    console.error("Error:", error);
+      const blockNumbers = transactions.map((transaction) => {
+        return Number(transaction.blockNumber);
+      });
+      return blockNumbers;
+    } catch (error) {
+      console.error(`Error fetching transactions (Attempt ${i + 1})`);
+      await new Promise((resolve) => setTimeout(resolve, 10000));
+      if (i === retryCount - 1) console.error(error);
+    }
   }
 }
 
-cumulativeGasCost();
+async function runForMultipleDays(startBlock, endBlock, intervalDays) {
+  const result = [];
 
-function printTransaction(tx) {
-  console.log("Gas limit:", tx.gas);
-  console.log("Cumulative gas used:", tx.cumulativeGasUsed);
-  console.log("Gas used:", tx.gasUsed);
-  console.log("Gas price:", tx.gasPrice);
-}
+  while (startBlock < endBlock) {
+    const fromBlock = startBlock;
+    const toBlock = Math.min(startBlock + intervalDays * 24 * 60 * 5, endBlock);
 
-let divCounter = 0;
-function higherGasPrice(tx) {
-  if (parseInt(tx.gasPrice) !== 1e8) {
-    divCounter++;
-    console.log("Gas price is not 1e8:", tx.gasPrice / 1e8, "div:", divCounter);
-  }
-}
-
-function calculateGasCostPerMonth(transactions, ethPrices, implicitGasPrice) {
-  const transactionsByMonth = {};
-  let cumulativeGasCostETH = 0;
-  let cumulativeGasCostUSD = 0;
-  for (let i = 0; i < transactions.length; i++) {
-    const tx = transactions[i];
-    // printTransaction(tx); // Uncomment to print transaction details
-    // higherGasPrice(tx); // Uncomment to check if gas price is higher than 1e8
-    const gasUsed = parseInt(tx.gasUsed);
-    const gasPrice = implicitGasPrice || parseInt(tx.gasPrice); // Use implicit gas price if it's provided (not 0)
-    const gasCost = (gasUsed * gasPrice) / 1e18; // Gas costs are in Wei, so divide by 1e18 to convert to ETH
-    cumulativeGasCostETH += gasCost;
-    cumulativeGasCostUSD += gasCost * ethPrices[i];
-
-    insertTransactionsByMonth(transactionsByMonth, tx, gasCost, ethPrices[i]);
+    const transactions = await getTransactions(fromBlock, toBlock);
+    result.push(...transactions);
+    startBlock = toBlock + 1;
   }
 
-  return [transactionsByMonth, cumulativeGasCostETH, cumulativeGasCostUSD];
+  return result;
 }
 
-function insertTransactionsByMonth(transactionsByMonth, tx, gasCost, ethPrice) {
-  const date = new Date(parseInt(tx.timeStamp) * 1000);
-  const month = `${date.getFullYear()}-${date.getMonth() + 1}`;
+async function main() {
+  const currentBlockNumber = Number(await web3.eth.getBlockNumber());
+  const endBlock = currentBlockNumber;
+  const totalDays = 180;
+  const startBlock = endBlock - totalDays * 24 * 60 * 5; // assuming 5 blocks per minute
+  const intervalDays = 15;
 
-  if (!transactionsByMonth[month]) {
-    transactionsByMonth[month] = {
-      transactions: [],
-      cumulativeGasCostETH: 0,
-      cumulativeGasCostUSD: 0,
-    };
-  }
-  transactionsByMonth[month].transactions.push(tx);
-  transactionsByMonth[month].cumulativeGasCostETH += gasCost;
-  transactionsByMonth[month].cumulativeGasCostUSD += gasCost * ethPrice;
+  const result = await runForMultipleDays(startBlock, endBlock, intervalDays);
+  console.log("Results:", result);
+  console.log("Total:", result.length);
 }
 
-async function getExactEthPrice(transactions) {
-  // Prepare an array of promises for fetching ETH prices for each transaction
-  const ethPricePromises = transactions.map(async (tx) => {
-    const timeStamp = parseInt(tx.timeStamp) * 1000; // Convert seconds to milliseconds
-    const ethUSD = await redstone.getHistoricalPrice("ETH", {
-      date: timeStamp,
-    });
-    return ethUSD.value;
-  });
-
-  // Fetch ETH prices for all transactions in parallel
-  const ethPrices = await Promise.all(ethPricePromises);
-  return ethPrices;
-}
-
-function displayResults(
-  transactions,
-  cumulativeGasCostETH,
-  cumulativeGasCostUSD,
-  contractName,
-  transactionsByMonth
-) {
-  prepareDates(transactions[0].timeStamp);
-  displayCumulativeGasCosts(
-    transactions.length,
-    cumulativeGasCostETH,
-    cumulativeGasCostUSD,
-    contractName
-  );
-  displayGasPerMonth(transactionsByMonth);
-}
-
-function displayCumulativeGasCosts(
-  numberOfTransactions,
-  cumulativeGasCostETH,
-  cumulativeGasCostUSD
-) {
-  console.log("Total number of transactions:", numberOfTransactions);
-  console.log(
-    `Cumulative Gas Costs for contract '${contractName}':`,
-    cumulativeGasCostETH,
-    "ETH",
-    cumulativeGasCostUSD,
-    "USD"
-  );
-  console.log("--------------------");
-}
-
-function displayGasPerMonth(transactionsByMonth) {
-  for (const month in transactionsByMonth) {
-    const { transactions, cumulativeGasCostETH, cumulativeGasCostUSD } =
-      transactionsByMonth[month];
-
-    const numberOfDays = getNumberOfDaysInMonth(month);
-    const averageTransactionsPerDay = transactions.length / numberOfDays;
-
-    console.log(`Month: ${month}`);
-    console.log("Number of transactions:", transactions.length);
-    console.log(
-      "Average number of transactions per day:",
-      +averageTransactionsPerDay.toFixed(2)
-    );
-    console.log(
-      "Cumulative Gas Costs:",
-      cumulativeGasCostETH,
-      "ETH",
-      cumulativeGasCostUSD,
-      "USD"
-    );
-    console.log("--------------------");
-  }
-}
+main();
