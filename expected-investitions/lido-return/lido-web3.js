@@ -94,7 +94,7 @@ async function readHistoricalValues() {
   const currentBlockNumber = Number(await web3.eth.getBlockNumber());
   const averageBlockTime = await getAverageBlockTime(web3.eth);
   const blocksToCheck = [];
-  const timesPerDay = 48;
+  const timesPerDay = 100;
   const numOfDays = 9;
   for (let i = 0; i <= numOfDays * timesPerDay; i++) {
     blocksToCheck.push(
