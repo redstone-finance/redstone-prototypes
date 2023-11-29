@@ -78,11 +78,14 @@ async function readFunctionValueAtBlock(targetBlockNumber, retryCount = 5) {
 
         // fromWei(result, "ether").toString();
       } else {
-        console.error("Error fetching block data.");
+        console.error(`Error fetching block data. (Attempt ${i + 1})`);
+        await new Promise((resolve) => setTimeout(resolve, 10000));
+        if (i === retryCount - 1) console.error(error);
       }
     } catch (error) {
-      console.error(`Error reading function value (Attempt ${i + 1}):`, error);
+      console.error(`Error reading function value (Attempt ${i + 1})`);
       await new Promise((resolve) => setTimeout(resolve, 10000));
+      if (i === retryCount - 1) console.error(error);
     }
   }
 }
@@ -91,7 +94,7 @@ async function readHistoricalValues() {
   const currentBlockNumber = Number(await web3.eth.getBlockNumber());
   const averageBlockTime = await getAverageBlockTime(web3.eth);
   const blocksToCheck = [];
-  const timesPerDay = 100;
+  const timesPerDay = 48;
   const numOfDays = 9;
   for (let i = 0; i <= numOfDays * timesPerDay; i++) {
     blocksToCheck.push(
