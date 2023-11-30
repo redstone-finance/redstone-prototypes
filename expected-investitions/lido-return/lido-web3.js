@@ -65,6 +65,7 @@ async function readFunctionValueAtBlock(targetBlockNumber, retryCount = 5) {
         const result = await contract.methods
           .stEthPerToken()
           .call(null, targetBlockNumber);
+        console.log("result", fromWei(result, "ether"));
         return {
           value: fromWei(result, "ether"),
           date: formattedDate,
@@ -82,6 +83,8 @@ async function readFunctionValueAtBlock(targetBlockNumber, retryCount = 5) {
     }
   }
 }
+
+// readFunctionValueAtBlock(17272708-5*60*24*720);
 
 async function readHistoricalValues() {
   const currentBlockNumber = Number(await web3.eth.getBlockNumber());
@@ -158,4 +161,4 @@ async function binSearchBlockWithValue(targetValue, startBlock, endBlock) {
   }
 }
 
-readHistoricalValues();
+// readHistoricalValues();
