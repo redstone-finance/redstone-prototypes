@@ -36,10 +36,12 @@ const contract = new web3.eth.Contract(contractABI, contractAddress);
 async function readFunctionValueAtBlock(targetBlockNumber, retryCount = 5) {
   for (let i = 0; i < retryCount; i++) {
     try {
+      const block = await web3.eth.getBlock(targetBlockNumber);
+      const timestamp = Number(block.timestamp);
       const result = await contract.methods
         .stEthPerToken()
         .call(null, targetBlockNumber);
-      return fromWei(result, "ether");
+      return { value: fromWei(result, "ether"), timestamp: timestamp };
     } catch (error) {
       console.error(`Error reading function value (Attempt ${i + 1})`);
       await new Promise((resolve) => setTimeout(resolve, 10000));
@@ -73,43 +75,24 @@ async function getBlockNumbers(retryCount = 5) {
   }
 }
 
-function calculateYearlyReturn(startWeekVal, endWeekVal) {
-  const weeklyReturn = endWeekVal / startWeekVal;
-  const yearlyReturn = weeklyReturn ** (365 / 7);
-  console.log("weeklyReturn", weeklyReturn);
-  console.log("yearlyReturn", yearlyReturn);
-}
-
-async function findPreviousWeekBlockNumber(blockNumbers) {
-  const maxDifferenceSeconds = (7 * 24 + 12) * 60 * 60;
-  const endBlockNumber = blockNumbers[blockNumbers.length - 1];
-
-  const endBlock = await web3.eth.getBlock(endBlockNumber);
-  const endTimestamp = Number(endBlock.timestamp);
-
-  let startBlockIndex = Math.max(blockNumbers.length - 8, 0);
-  let startBlock = await web3.eth.getBlock(blockNumbers[startBlockIndex]);
-  let startTimestamp = Number(startBlock.timestamp);
-
-  while (endTimestamp - startTimestamp > maxDifferenceSeconds) {
-    startBlockIndex++;
-    startBlock = await web3.eth.getBlock(blockNumbers[startBlockIndex]);
-    startTimestamp = Number(startBlock.timestamp);
-  }
-  console.log(`Time difference: ${endTimestamp - startTimestamp} seconds`);
-  console.log(`maxDifferenceSeconds: ${maxDifferenceSeconds} seconds`);
-
-  return startBlockIndex;
+function calculateYearlyReturn(startValTime, endValTime) {
+  const secondsInYear = 365.25 * 24 * 60 * 60;
+  const secondsInPeriod = endValTime.timestamp - startValTime.timestamp;
+  const periodReturn = endValTime.value / startValTime.value;
+  const yearlyReturn = periodReturn ** (secondsInYear / secondsInPeriod);
+  console.log(
+    `Period return: ${periodReturn} in ${Math.round(
+      secondsInPeriod / (60 * 60 * 24)
+    )} days`
+  );
+  console.log("Yearly return", yearlyReturn);
+  return yearlyReturn;
 }
 
 async function readHistoricalValues() {
   const blocksToCheck = await getBlockNumbers();
-  const startBlockIndex = await findPreviousWeekBlockNumber(blocksToCheck);
-  // TODO:if we are sure everything works great (for last 200 days it was OK), then simply use:
-  // const startBlockIndex = blocksToCheck.length - 8;
-  console.log("startBlockIndex", startBlockIndex);
   const actualBlocksToCheck = [
-    blocksToCheck[startBlockIndex],
+    blocksToCheck[blocksToCheck.length - 8],
     blocksToCheck[blocksToCheck.length - 1],
   ];
 
