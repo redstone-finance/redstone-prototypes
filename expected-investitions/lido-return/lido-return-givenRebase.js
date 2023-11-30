@@ -33,46 +33,46 @@ const contractABI = [
 
 const contract = new web3.eth.Contract(contractABI, contractAddress);
 
-async function readFunctionValueAtBlock(targetBlockNumber, retryCount = 5) {
+async function retryOperation(operation, retryCount = 5, delay = 10000) {
   for (let i = 0; i < retryCount; i++) {
     try {
-      const block = await web3.eth.getBlock(targetBlockNumber);
-      const timestamp = Number(block.timestamp);
-      const result = await contract.methods
-        .stEthPerToken()
-        .call(null, targetBlockNumber);
-      return { value: fromWei(result, "ether"), timestamp: timestamp };
+      return await operation();
     } catch (error) {
-      console.error(`Error reading function value (Attempt ${i + 1})`);
-      await new Promise((resolve) => setTimeout(resolve, 10000));
+      console.error(`Error (Attempt ${i + 1}/${retryCount})`);
       if (i === retryCount - 1) console.error(error);
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 }
 
-async function getBlockNumbers(retryCount = 5) {
-  for (let i = 0; i < retryCount; i++) {
-    try {
-      const days = 9;
-      const blockRange = days * 24 * 60 * 5; // assuming 5 blocks per minute, if more than increase 5 to 6 or 7
-      const currentBlockNumber = Number(await web3.eth.getBlockNumber());
-      const transactions = await web3.eth.getPastLogs({
-        address: address,
-        fromBlock: currentBlockNumber - blockRange,
-        toBlock: currentBlockNumber,
-        topics: topics,
-      });
+async function readFunctionValueAtBlock(targetBlockNumber) {
+  return await retryOperation(async () => {
+    const block = await web3.eth.getBlock(targetBlockNumber);
+    const timestamp = Number(block.timestamp);
+    const result = await contract.methods
+      .stEthPerToken()
+      .call(null, targetBlockNumber);
+    return { value: fromWei(result, "ether"), timestamp: timestamp };
+  });
+}
 
-      const blockNumbers = transactions.map((transaction) => {
-        return Number(transaction.blockNumber);
-      });
-      return blockNumbers;
-    } catch (error) {
-      console.error(`Error fetching transactions (Attempt ${i + 1})`);
-      await new Promise((resolve) => setTimeout(resolve, 10000));
-      if (i === retryCount - 1) console.error(error);
-    }
-  }
+async function getBlockNumbers() {
+  return await retryOperation(async () => {
+    const days = 9;
+    const blockRange = days * 24 * 60 * 5; // assuming 5 blocks per minute, if more than increase 5 to 6 or 7
+    const currentBlockNumber = Number(await web3.eth.getBlockNumber());
+    const transactions = await web3.eth.getPastLogs({
+      address: address,
+      fromBlock: currentBlockNumber - blockRange,
+      toBlock: currentBlockNumber,
+      topics: topics,
+    });
+
+    const blockNumbers = transactions.map((transaction) => {
+      return Number(transaction.blockNumber);
+    });
+    return blockNumbers;
+  });
 }
 
 function calculateYearlyReturn(startValTime, endValTime) {
