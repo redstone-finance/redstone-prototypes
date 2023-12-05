@@ -5,6 +5,7 @@ const fs = require("fs");
 const createCsvWriter = require("csv-writer").createObjectCsvWriter;
 
 const rpcUrl = "https://eth.drpc.org";
+// const rpcUrl = "https://rpc.builder0x69.io";
 const httpProvider = new Web3.providers.HttpProvider(rpcUrl);
 const web3 = new Web3(httpProvider);
 const dater = new EthDater(web3);
@@ -38,12 +39,13 @@ const contractABI = [
 
 const contract = new web3.eth.Contract(contractABI, contractAddress);
 
-async function retryOperation(operation, retryCount = 5, delay = 10000) {
+async function retryOperation(operation, retryCount = 100, delay = 10000) {
   for (let i = 0; i < retryCount; i++) {
     try {
       return await operation();
     } catch (error) {
-      console.error(`Error (Attempt ${i + 1}/${retryCount})`);
+      if ((i + 1) % 10 == 0)
+        console.error(`Error (Attempt ${i + 1}/${retryCount})`);
       if (i === retryCount - 1) console.error(error);
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
@@ -126,6 +128,7 @@ async function writeResultsToCsv(yearlyReturns, fileName) {
       { id: "endTime", title: "EndTime" },
       { id: "value", title: "Value" },
     ],
+    append: true,
   });
   const records = yearlyReturns.map((yearlyReturn) => ({
     endTime: yearlyReturn.endTime,
@@ -134,7 +137,7 @@ async function writeResultsToCsv(yearlyReturns, fileName) {
   await csvWriter.writeRecords(records);
 }
 
-async function readHistoricalValues30D() {
+async function readHistoricalValues1h30D() {
   const currentTimestampMs = Math.floor(Date.now());
   let timestampsList = [];
   for (let i = 0; i < 24 * 30; i++) {
@@ -149,9 +152,9 @@ async function readHistoricalValues30D() {
   writeResultsToCsv(yearlyReturns, "lido-return-1h30D.csv");
 }
 
-// readHistoricalValues30D();
+// readHistoricalValues1h30D();
 
-async function readHistoricalValues1Y() {
+async function readHistoricalValues1d1Y() {
   const currentTimestampMs = Math.floor(Date.now());
   let timestampsList = [];
   for (let i = 0; i < 366; i++) {
@@ -166,12 +169,12 @@ async function readHistoricalValues1Y() {
   writeResultsToCsv(yearlyReturns, "lido-return-1d1Y.csv");
 }
 
-async function readHistoricalRatio3Y() {
+async function readHistoricalRatio1d3Y() {
   const currentTimestampMs02 = new Date(
     new Date().setHours(2, 0, 0, 0)
   ).getTime();
   let timestampsList = [];
-  for (let i = 0; i < 366 * 5; i++) {
+  for (let i = 0; i < 366 * 3; i++) {
     if (currentTimestampMs02 - i * 24 * 3600 * 1000 < borderTimestamp) break;
     timestampsList.push(currentTimestampMs02 - i * 24 * 3600 * 1000); // 1 day
   }
@@ -198,7 +201,56 @@ async function readHistoricalRatio3Y() {
   console.log(counter);
 }
 
-readHistoricalRatio3Y();
+// readHistoricalRatio1d3Y();
+
+async function readHistoricalRatio1h3Y() {
+  const currentTimestampMs02 = new Date(
+    new Date().setHours(2, 0, 0, 0)
+  ).getTime();
+  let timestampsList = [];
+  for (let i = 0; i < 24 * 366 * 3; i++) {
+    if (currentTimestampMs02 - i * 3600 * 1000 < borderTimestamp) break;
+    timestampsList.push(currentTimestampMs02 - i * 3600 * 1000); // 1 hour
+  }
+
+  const batchProcessSize = 500;
+  const Ratios = [];
+
+  for (let i = 0; i < timestampsList.length; i += batchProcessSize) {
+    const currentBatch = timestampsList.slice(i, i + batchProcessSize);
+    const batchResults = await Promise.all(
+      currentBatch.map(async (timestamp) => ({
+        endTime: new Date(timestamp).toISOString(),
+        value: await getRatioAtTimestamp(timestamp),
+      }))
+    );
+    await writeResultsToCsv(batchResults, "lido-ratio-1h3Y.csv");
+    Ratios.push(...batchResults);
+    console.log(
+      `Processed ${Ratios.length} records out of ${timestampsList.length}`
+    );
+    console.log(
+      `Processed ${Math.round((Ratios.length / timestampsList.length) * 100)}%`
+    );
+  }
+
+  // writeResultsToCsv(Ratios, "lido-ratio-1h3Y.csv");
+
+  console.log(timestampsList.length);
+  console.log(Ratios.length);
+  let counter = 0;
+  for (let i = 1; i < timestampsList.length; i++) {
+    if (Ratios[i].value > Ratios[i - 1].value) {
+      console.log("error at " + i + " " + Ratios[i].endTime);
+    }
+    if (Ratios[i].value < Ratios[i - 1].value) {
+      counter += 1;
+    }
+  }
+  console.log(counter);
+}
+
+readHistoricalRatio1h3Y();
 
 // async function tester() {
 //   const timestampMs = 1613752630000;
