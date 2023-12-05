@@ -8,6 +8,7 @@ const rpcUrl = "https://eth.drpc.org";
 const httpProvider = new Web3.providers.HttpProvider(rpcUrl);
 const web3 = new Web3(httpProvider);
 const dater = new EthDater(web3);
+const borderTimestamp = 1613752630000;
 
 const contractAddress = "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0";
 const address = "0xd15a672319cf0352560ee76d9e89eab0889046d3";
@@ -108,6 +109,16 @@ async function getReturnToTimestamp(toTimestamp) {
   return calculateYearlyReturn(blockValues[0], blockValues[1]);
 }
 
+async function getRatioAtTimestamp(timestamp) {
+  return await retryOperation(async () => {
+    const blockNumber = (await dater.getDate(timestamp)).block;
+    const value = await contract.methods
+      .stEthPerToken()
+      .call(null, blockNumber);
+    return fromWei(value, "ether");
+  });
+}
+
 async function writeResultsToCsv(yearlyReturns, fileName) {
   const csvWriter = createCsvWriter({
     path: fileName,
@@ -155,4 +166,46 @@ async function readHistoricalValues1Y() {
   writeResultsToCsv(yearlyReturns, "lido-return-1d1Y.csv");
 }
 
-readHistoricalValues1Y();
+async function readHistoricalRatio3Y() {
+  const currentTimestampMs02 = new Date(
+    new Date().setHours(2, 0, 0, 0)
+  ).getTime();
+  let timestampsList = [];
+  for (let i = 0; i < 366 * 5; i++) {
+    if (currentTimestampMs02 - i * 24 * 3600 * 1000 < borderTimestamp) break;
+    timestampsList.push(currentTimestampMs02 - i * 24 * 3600 * 1000); // 1 day
+  }
+  const Ratios = await Promise.all(
+    timestampsList.map(async (timestamp) => ({
+      endTime: new Date(timestamp).toISOString(),
+      value: await getRatioAtTimestamp(timestamp),
+    }))
+  );
+  writeResultsToCsv(Ratios, "lido-ratio-1d3Y.csv");
+
+  console.log(timestampsList.length);
+  console.log(Ratios.length);
+  let counter = 0;
+  for (let i = 1; i < timestampsList.length; i++) {
+    if (Ratios[i].value > Ratios[i - 1].value) {
+      console.log("error at " + i + " " + Ratios[i].endTime);
+    }
+    if (Ratios[i].value == Ratios[i - 1].value) {
+      counter += 1;
+      console.log("same at " + i + " " + Ratios[i].endTime);
+    }
+  }
+  console.log(counter);
+}
+
+readHistoricalRatio3Y();
+
+// async function tester() {
+//   const timestampMs = 1613752630000;
+//   // new Date(new Date().setHours(2, 0, 0, 0)).getTime() -
+//   // 24 * 3600 * 1000 * 365 * 2.789;
+//   // console.log(timestampMs)
+//   console.log(await getRatioAtTimestamp(timestampMs));
+// }
+
+// tester();
