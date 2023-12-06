@@ -6,16 +6,16 @@ WITH
         FROM dex.trades
         WHERE block_time >= cast(now() as timestamp) - interval '1' day
         AND ( 0=1 -- Easier to edit
-            OR (blockchain = 'polygon' AND (token_bought_address = 0x2C89bbc92BD86F8075d1DEcc58C7F4E0107f286b OR token_sold_address = 0x2C89bbc92BD86F8075d1DEcc58C7F4E0107f286b))
+            -- OR (blockchain = 'polygon' AND (token_bought_address = 0x2C89bbc92BD86F8075d1DEcc58C7F4E0107f286b OR token_sold_address = 0x2C89bbc92BD86F8075d1DEcc58C7F4E0107f286b))
             -- OR (blockchain = 'base' AND (token_bought_address = 0xdd4ac477d7c98a1fca789efdb9c56b14e25bc35d OR token_sold_address = 0xdd4ac477d7c98a1fca789efdb9c56b14e25bc35d))
             -- OR (blockchain = 'ethereum' AND (token_bought_address = 0x3c3a81e81dc49A522A592e7622A7E711c06bf354 OR token_sold_address = 0x3c3a81e81dc49A522A592e7622A7E711c06bf354))
             -- OR (blockchain = 'optimism' AND (token_bought_address = 0x9d669fD9a297Ed34159B0ce61BE0a4d5c6bb8489 OR token_sold_address = 0x9d669fD9a297Ed34159B0ce61BE0a4d5c6bb8489))
-            OR (blockchain = 'bnb' AND (token_bought_address = 0x1ce0c2827e2ef14d5c4f29a091d735a204794041 OR token_sold_address = 0x1ce0c2827e2ef14d5c4f29a091d735a204794041))
-            OR (blockchain = 'celo' AND (token_bought_address = 0x8e3670fd7b0935d3fe832711debfe13bb689b690 OR token_sold_address = 0x8e3670fd7b0935d3fe832711debfe13bb689b690))
-            OR (blockchain = 'avalanche_c' AND (token_bought_address = 0xB57B60DeBDB0b8172bb6316a9164bd3C695F133a OR token_sold_address = 0xB57B60DeBDB0b8172bb6316a9164bd3C695F133a))
+            OR (blockchain = 'bnb' AND (token_bought_address = 0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63 OR token_sold_address = 0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63))
+            -- OR (blockchain = 'celo' AND (token_bought_address = 0x8e3670fd7b0935d3fe832711debfe13bb689b690 OR token_sold_address = 0x8e3670fd7b0935d3fe832711debfe13bb689b690))
+            -- OR (blockchain = 'avalanche_c' AND (token_bought_address = 0xB57B60DeBDB0b8172bb6316a9164bd3C695F133a OR token_sold_address = 0xB57B60DeBDB0b8172bb6316a9164bd3C695F133a))
             -- OR (blockchain = 'gnosis' AND (token_bought_address = 0x4b1E2c2762667331Bc91648052F646d1b0d35984 OR token_sold_address = 0x4b1E2c2762667331Bc91648052F646d1b0d35984))
             -- OR (blockchain = 'arbitrum' AND (token_bought_address = 0x1Ca6e7eb4Ba052Ac6CB53E2516061F88821C1eC2 OR token_sold_address = 0x1Ca6e7eb4Ba052Ac6CB53E2516061F88821C1eC2))
-            OR (blockchain = 'fantom' AND (token_bought_address = 0x511D35c52a3C244E7b8bd92c0C297755FbD89212 OR token_sold_address = 0x511D35c52a3C244E7b8bd92c0C297755FbD89212))
+            -- OR (blockchain = 'fantom' AND (token_bought_address = 0x511D35c52a3C244E7b8bd92c0C297755FbD89212 OR token_sold_address = 0x511D35c52a3C244E7b8bd92c0C297755FbD89212))
         )
         -- AND (token_bought_symbol = '{{token_symbol}}' OR token_sold_symbol = '{{token_symbol}}')
         GROUP BY blockchain, project, version, project_contract_address
@@ -26,16 +26,16 @@ WITH
         FROM dex.trades
         WHERE block_time >= cast(now() as timestamp) - interval '7' day
         AND (  0=1 -- Easier to edit
-            OR (blockchain = 'polygon' AND (token_bought_address = 0x2C89bbc92BD86F8075d1DEcc58C7F4E0107f286b OR token_sold_address = 0x2C89bbc92BD86F8075d1DEcc58C7F4E0107f286b))
+            -- OR (blockchain = 'polygon' AND (token_bought_address = 0x2C89bbc92BD86F8075d1DEcc58C7F4E0107f286b OR token_sold_address = 0x2C89bbc92BD86F8075d1DEcc58C7F4E0107f286b))
             -- OR (blockchain = 'base' AND (token_bought_address = 0xdd4ac477d7c98a1fca789efdb9c56b14e25bc35d OR token_sold_address = 0xdd4ac477d7c98a1fca789efdb9c56b14e25bc35d))
             -- OR (blockchain = 'ethereum' AND (token_bought_address = 0x3c3a81e81dc49A522A592e7622A7E711c06bf354 OR token_sold_address = 0x3c3a81e81dc49A522A592e7622A7E711c06bf354))
             -- OR (blockchain = 'optimism' AND (token_bought_address = 0x9d669fD9a297Ed34159B0ce61BE0a4d5c6bb8489 OR token_sold_address = 0x9d669fD9a297Ed34159B0ce61BE0a4d5c6bb8489))
-            OR (blockchain = 'bnb' AND (token_bought_address = 0x1ce0c2827e2ef14d5c4f29a091d735a204794041 OR token_sold_address = 0x1ce0c2827e2ef14d5c4f29a091d735a204794041))
-            OR (blockchain = 'celo' AND (token_bought_address = 0x8e3670fd7b0935d3fe832711debfe13bb689b690 OR token_sold_address = 0x8e3670fd7b0935d3fe832711debfe13bb689b690))
-            OR (blockchain = 'avalanche_c' AND (token_bought_address = 0xB57B60DeBDB0b8172bb6316a9164bd3C695F133a OR token_sold_address = 0xB57B60DeBDB0b8172bb6316a9164bd3C695F133a))
+            OR (blockchain = 'bnb' AND (token_bought_address = 0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63 OR token_sold_address = 0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63))
+            -- OR (blockchain = 'celo' AND (token_bought_address = 0x8e3670fd7b0935d3fe832711debfe13bb689b690 OR token_sold_address = 0x8e3670fd7b0935d3fe832711debfe13bb689b690))
+            -- OR (blockchain = 'avalanche_c' AND (token_bought_address = 0xB57B60DeBDB0b8172bb6316a9164bd3C695F133a OR token_sold_address = 0xB57B60DeBDB0b8172bb6316a9164bd3C695F133a))
             -- OR (blockchain = 'gnosis' AND (token_bought_address = 0x4b1E2c2762667331Bc91648052F646d1b0d35984 OR token_sold_address = 0x4b1E2c2762667331Bc91648052F646d1b0d35984))
             -- OR (blockchain = 'arbitrum' AND (token_bought_address = 0x1Ca6e7eb4Ba052Ac6CB53E2516061F88821C1eC2 OR token_sold_address = 0x1Ca6e7eb4Ba052Ac6CB53E2516061F88821C1eC2))
-            OR (blockchain = 'fantom' AND (token_bought_address = 0x511D35c52a3C244E7b8bd92c0C297755FbD89212 OR token_sold_address = 0x511D35c52a3C244E7b8bd92c0C297755FbD89212))
+            -- OR (blockchain = 'fantom' AND (token_bought_address = 0x511D35c52a3C244E7b8bd92c0C297755FbD89212 OR token_sold_address = 0x511D35c52a3C244E7b8bd92c0C297755FbD89212))
         )
         -- AND (token_bought_symbol = '{{token_symbol}}' OR token_sold_symbol = '{{token_symbol}}')
         GROUP BY blockchain, project, version, project_contract_address
