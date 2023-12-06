@@ -6,15 +6,15 @@ WITH
         FROM dex.trades
         WHERE block_time >= cast(now() as timestamp) - interval '1' day
         AND ( 0=1 -- Easier to edit
-            -- OR (blockchain = 'polygon' AND (token_bought_address = 0x OR token_sold_address = 0x))
+            OR (blockchain = 'polygon' AND (token_bought_address = 0xCc2a9051E904916047c26C90f41c000D4f273456 OR token_sold_address = 0xCc2a9051E904916047c26C90f41c000D4f273456))
             -- OR (blockchain = 'base' AND (token_bought_address = 0xdd4ac477d7c98a1fca789efdb9c56b14e25bc35d OR token_sold_address = 0xdd4ac477d7c98a1fca789efdb9c56b14e25bc35d))
-            OR (blockchain = 'ethereum' AND (token_bought_address = 0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5 OR token_sold_address = 0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5))
+            -- OR (blockchain = 'ethereum' AND (token_bought_address = 0x64aa3364F17a4D01c6f1751Fd97C2BD3D7e7f1D5 OR token_sold_address = 0x64aa3364F17a4D01c6f1751Fd97C2BD3D7e7f1D5))
             -- OR (blockchain = 'optimism' AND (token_bought_address = 0x OR token_sold_address = 0x))
-            OR (blockchain = 'bnb' AND (token_bought_address = 0xCE7de646e7208a4Ef112cb6ed5038FA6cC6b12e3 OR token_sold_address = 0xCE7de646e7208a4Ef112cb6ed5038FA6cC6b12e3))
+            OR (blockchain = 'bnb' AND (token_bought_address = 0x1d2f0da169ceb9fc7b3144628db156f3f6c60dbe OR token_sold_address = 0x1d2f0da169ceb9fc7b3144628db156f3f6c60dbe))
             -- OR (blockchain = 'celo' AND (token_bought_address = 0xd629eb00deced2a080b7ec630ef6ac117e614f1b OR token_sold_address = 0xd629eb00deced2a080b7ec630ef6ac117e614f1b))
             -- OR (blockchain = 'avalanche_c' AND (token_bought_address = 0x OR token_sold_address = 0x))
-            -- OR (blockchain = 'gnosis' AND (token_bought_address = 0x OR token_sold_address = 0x))
-            -- OR (blockchain = 'arbitrum' AND (token_bought_address = 0xbc011a12da28e8f0f528d9ee5e7039e22f91cf18 OR token_sold_address = 0xbc011a12da28e8f0f528d9ee5e7039e22f91cf18))
+            OR (blockchain = 'gnosis' AND (token_bought_address = 0x458CBFb4Daf5EE16CE14b2bC2633B1aF1Fe8981b OR token_sold_address = 0x458CBFb4Daf5EE16CE14b2bC2633B1aF1Fe8981b))
+            OR (blockchain = 'arbitrum' AND (token_bought_address = 0xeeb78fcA54376aeE7803b1a535974842C4236ADd OR token_sold_address = 0xeeb78fcA54376aeE7803b1a535974842C4236ADd))
             -- OR (blockchain = 'fantom' AND (token_bought_address = 0x OR token_sold_address = 0x))
         )
         -- AND (token_bought_symbol = '{{token_symbol}}' OR token_sold_symbol = '{{token_symbol}}')
@@ -26,15 +26,15 @@ WITH
         FROM dex.trades
         WHERE block_time >= cast(now() as timestamp) - interval '7' day
         AND (  0=1 -- Easier to edit
-          -- OR (blockchain = 'polygon' AND (token_bought_address = 0x OR token_sold_address = 0x))
+            OR (blockchain = 'polygon' AND (token_bought_address = 0xCc2a9051E904916047c26C90f41c000D4f273456 OR token_sold_address = 0xCc2a9051E904916047c26C90f41c000D4f273456))
             -- OR (blockchain = 'base' AND (token_bought_address = 0xdd4ac477d7c98a1fca789efdb9c56b14e25bc35d OR token_sold_address = 0xdd4ac477d7c98a1fca789efdb9c56b14e25bc35d))
-            OR (blockchain = 'ethereum' AND (token_bought_address = 0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5 OR token_sold_address = 0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5))
+            -- OR (blockchain = 'ethereum' AND (token_bought_address = 0x64aa3364F17a4D01c6f1751Fd97C2BD3D7e7f1D5 OR token_sold_address = 0x64aa3364F17a4D01c6f1751Fd97C2BD3D7e7f1D5))
             -- OR (blockchain = 'optimism' AND (token_bought_address = 0x OR token_sold_address = 0x))
-            OR (blockchain = 'bnb' AND (token_bought_address = 0xCE7de646e7208a4Ef112cb6ed5038FA6cC6b12e3 OR token_sold_address = 0xCE7de646e7208a4Ef112cb6ed5038FA6cC6b12e3))
+            OR (blockchain = 'bnb' AND (token_bought_address = 0x1d2f0da169ceb9fc7b3144628db156f3f6c60dbe OR token_sold_address = 0x1d2f0da169ceb9fc7b3144628db156f3f6c60dbe))
             -- OR (blockchain = 'celo' AND (token_bought_address = 0xd629eb00deced2a080b7ec630ef6ac117e614f1b OR token_sold_address = 0xd629eb00deced2a080b7ec630ef6ac117e614f1b))
             -- OR (blockchain = 'avalanche_c' AND (token_bought_address = 0x OR token_sold_address = 0x))
-            -- OR (blockchain = 'gnosis' AND (token_bought_address = 0x OR token_sold_address = 0x))
-            -- OR (blockchain = 'arbitrum' AND (token_bought_address = 0xbc011a12da28e8f0f528d9ee5e7039e22f91cf18 OR token_sold_address = 0xbc011a12da28e8f0f528d9ee5e7039e22f91cf18))
+            OR (blockchain = 'gnosis' AND (token_bought_address = 0x458CBFb4Daf5EE16CE14b2bC2633B1aF1Fe8981b OR token_sold_address = 0x458CBFb4Daf5EE16CE14b2bC2633B1aF1Fe8981b))
+            OR (blockchain = 'arbitrum' AND (token_bought_address = 0xeeb78fcA54376aeE7803b1a535974842C4236ADd OR token_sold_address = 0xeeb78fcA54376aeE7803b1a535974842C4236ADd))
             -- OR (blockchain = 'fantom' AND (token_bought_address = 0x OR token_sold_address = 0x))
         )
         -- AND (token_bought_symbol = '{{token_symbol}}' OR token_sold_symbol = '{{token_symbol}}')
