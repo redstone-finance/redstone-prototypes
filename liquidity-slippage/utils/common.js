@@ -4,7 +4,7 @@ const dotenv = require("dotenv");
 const path = require("path");
 const axios = require("axios");
 const constants = require("../utils/constants");
-const { appendToCSV, stepToCSV } = require("../utils/csv-utils");
+const { appendToCSV, stepToCSV, stepToCSVUnrelated } = require("../utils/csv-utils");
 
 const pricesUnrelated = constants.pricesUnrelated;
 const pricesRelated = constants.pricesRelated;
@@ -213,18 +213,18 @@ async function calculatePriceDifference(
   const firstPriceInUSD = await getPrice(fromCrypto);
   const secondPriceInUSD = await getPrice(toCrypto);
 
-  return await slowCallGetOutAmount(
-    prices,
-    firstPriceInSecond,
-    secondPriceInFirst,
-    gasFee,
-    fromCrypto,
-    toCrypto,
-    getOutAmount,
-    contract,
-    firstPriceInUSD,
-    secondPriceInUSD
-  );
+  // return await slowCallGetOutAmount(
+  //   prices,
+  //   firstPriceInSecond,
+  //   secondPriceInFirst,
+  //   gasFee,
+  //   fromCrypto,
+  //   toCrypto,
+  //   getOutAmount,
+  //   contract,
+  //   firstPriceInUSD,
+  //   secondPriceInUSD
+  // );
 
   const resultPromises = prices.map(async (price) => {
     const slipAtoB = callGetOutAmount(
@@ -413,6 +413,59 @@ async function amountTradeXSlippage(
   stepToCSV(dataObject, prices);
 }
 
+const generatePricesArray = (step) => {
+  const startPrice = step;
+  const endPrice = 1e7;
+
+  const pricesArray = [];
+  for (let price = startPrice; price <= endPrice; price += step) {
+    pricesArray.push(price);
+  }
+
+  return pricesArray;
+};
+
+async function amountTradeXSlippageIndependent(
+  DEX,
+  fromCrypto,
+  toCrypto,
+  poolSize,
+  secondPriceInFirst,
+  firstPriceInSecond,
+  gasFee,
+  getOutAmount,
+  contract
+) {
+  const step = 1e5; // TODO: test later 10000, 25000, 50000, 100000
+  const prices = generatePricesArray(step);
+
+  console.log("finishing generating prices array");
+
+  const resultsIndependent = await calculatePriceDifference(
+    prices,
+    firstPriceInSecond,
+    secondPriceInFirst,
+    gasFee,
+    fromCrypto,
+    toCrypto,
+    getOutAmount,
+    contract
+  );
+
+  const dataObject = generateStepDataObject(
+    DEX,
+    fromCrypto.symbol,
+    toCrypto.symbol,
+    poolSize,
+    secondPriceInFirst,
+    firstPriceInSecond,
+    resultsIndependent,
+    prices
+  );
+
+  stepToCSVUnrelated(dataObject, prices, `$${step / 1e3}k`);
+}
+
 module.exports = {
   calculatePoolSize,
   calcPriceSecondInFirst,
@@ -424,4 +477,5 @@ module.exports = {
   reversePrice,
   calcPricesInEachOther,
   amountTradeXSlippage,
+  amountTradeXSlippageIndependent,
 };

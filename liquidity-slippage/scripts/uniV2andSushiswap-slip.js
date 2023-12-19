@@ -7,12 +7,13 @@ const {
   calcPricesInEachOther,
   calculateAndWriteToCSV,
   amountTradeXSlippage,
+  amountTradeXSlippageIndependent,
 } = require("../utils/common");
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
-const DATA_INDEX = 0;
+const DATA_INDEX = 2;
 
 const pairs = [
   {
@@ -115,7 +116,19 @@ async function calculateSlippage(fromCrypto, toCrypto) {
   //   getOutAmount,
   //   contract
   // );
-  amountTradeXSlippage(
+  // amountTradeXSlippage(
+  //   DEX,
+  //   fromCrypto,
+  //   toCrypto,
+  //   poolSize,
+  //   secondPriceInFirst,
+  //   firstPriceInSecond,
+  //   gasFee,
+  //   getOutAmount,
+  //   contract
+  // );
+
+  amountTradeXSlippageIndependent(
     DEX,
     fromCrypto,
     toCrypto,

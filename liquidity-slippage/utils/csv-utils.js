@@ -85,8 +85,8 @@ function appendToCSV(data) {
 }
 
 function stepToCSV(data, prices) {
-    const file = "../results/step2Slippage.csv";
-    const filePath = path.join(currentScriptDirectory, file);
+  const file = "../results/step2Slippage.csv";
+  const filePath = path.join(currentScriptDirectory, file);
 
   const headers = [
     { id: "DEX", title: "DEX" },
@@ -105,50 +105,111 @@ function stepToCSV(data, prices) {
     headers.push({ id: priceKeyBtoA, title: priceKeyBtoA });
   });
 
-  //todo: start from try...
-   try {
-     if (!fs.existsSync(filePath)) {
-       const csvWriter = createCsvWriter({
-         path: filePath,
-         header: headers,
-       });
-       csvWriter.writeRecords([]); // Empty array to create file with headers
-     }
+  try {
+    if (!fs.existsSync(filePath)) {
+      const csvWriter = createCsvWriter({
+        path: filePath,
+        header: headers,
+      });
+      csvWriter.writeRecords([]); // Empty array to create file with headers
+    }
 
-     const dataToWrite = {
-       DEX: data.DEX,
-       TokenA: data.TokenA,
-       TokenB: data.TokenB,
-       PriceTokenBinA: data.secondPriceInFirst,
-       PriceTokenAinB: data.firstPriceInSecond,
-       PoolSize: data.poolSize,
-     };
+    const dataToWrite = {
+      DEX: data.DEX,
+      TokenA: data.TokenA,
+      TokenB: data.TokenB,
+      PriceTokenBinA: data.secondPriceInFirst,
+      PriceTokenAinB: data.firstPriceInSecond,
+      PoolSize: data.poolSize,
+    };
 
-     prices.forEach((price, index) => {
-       const priceKey = `Slip${price}`;
-       const priceKeyAtoB = `${priceKey}AtoB`;
-       const priceKeyBtoA = `${priceKey}BtoA`;
-       dataToWrite[priceKeyAtoB] = data.slippageRelated[index][1];
-       dataToWrite[priceKeyBtoA] = data.slippageRelated[index][2];
-     });
+    prices.forEach((price, index) => {
+      const priceKey = `Slip${price}`;
+      const priceKeyAtoB = `${priceKey}AtoB`;
+      const priceKeyBtoA = `${priceKey}BtoA`;
+      dataToWrite[priceKeyAtoB] = data.slippageRelated[index][1];
+      dataToWrite[priceKeyBtoA] = data.slippageRelated[index][2];
+    });
 
-     const csvWriter = createCsvWriter({
-       path: filePath,
-       header: headers,
-       append: true,
-     });
+    const csvWriter = createCsvWriter({
+      path: filePath,
+      header: headers,
+      append: true,
+    });
 
-     csvWriter.writeRecords([dataToWrite]).then(() => {
-       console.log("Object has been added to CSV file.");
-     });
-   } catch (error) {
-     console.error("Error occurred while adding object to CSV file:", error);
-   }
+    csvWriter.writeRecords([dataToWrite]).then(() => {
+      console.log("Object has been added to CSV file.");
+    });
+  } catch (error) {
+    console.error("Error occurred while adding object to CSV file:", error);
+  }
+}
+
+function stepToCSVUnrelated(data, prices, step) {
+  const file = `../results/stepUnrelatedSlippage$${step}k.csv`;
+  const filePath = path.join(currentScriptDirectory, file);
+
+  const headers = [
+    { id: "DEX", title: "DEX" },
+    { id: "TokenA", title: "TokenA" },
+    { id: "TokenB", title: "TokenB" },
+    { id: "PriceTokenBinA", title: "Price Token B in A" },
+    { id: "PriceTokenAinB", title: "Price Token A in B" },
+    { id: "PoolSize", title: "Pool Size" },
+  ];
+
+  prices.forEach((price) => {
+    const priceKey = `Slip$${price / 1e3}k`;
+    const priceKeyAtoB = `${priceKey}AtoB`;
+    const priceKeyBtoA = `${priceKey}BtoA`;
+    headers.push({ id: priceKeyAtoB, title: priceKeyAtoB });
+    headers.push({ id: priceKeyBtoA, title: priceKeyBtoA });
+  });
+
+  try {
+    if (!fs.existsSync(filePath)) {
+      const csvWriter = createCsvWriter({
+        path: filePath,
+        header: headers,
+      });
+      csvWriter.writeRecords([]); // Empty array to create file with headers
+    }
+
+    const dataToWrite = {
+      DEX: data.DEX,
+      TokenA: data.TokenA,
+      TokenB: data.TokenB,
+      PriceTokenBinA: data.secondPriceInFirst,
+      PriceTokenAinB: data.firstPriceInSecond,
+      PoolSize: data.poolSize,
+    };
+
+    prices.forEach((price, index) => {
+      const priceKey = `Slip$${price / 1e3}k`;
+      const priceKeyAtoB = `${priceKey}AtoB`;
+      const priceKeyBtoA = `${priceKey}BtoA`;
+      dataToWrite[priceKeyAtoB] = data.slippageRelated[index][1];
+      dataToWrite[priceKeyBtoA] = data.slippageRelated[index][2];
+    });
+
+    const csvWriter = createCsvWriter({
+      path: filePath,
+      header: headers,
+      append: true,
+    });
+
+    csvWriter.writeRecords([dataToWrite]).then(() => {
+      console.log("Object has been added to CSV file.");
+    });
+  } catch (error) {
+    console.error("Error occurred while adding object to CSV file:", error);
+  }
 }
 
 module.exports = {
   appendToCSV,
   stepToCSV,
+  stepToCSVUnrelated,
 };
 
 // Example data

@@ -7,6 +7,7 @@ const {
   calculateAndWriteToCSV,
   amountTradeXSlippage,
   reversePrice,
+  amountTradeXSlippageIndependent,
 } = require("../utils/common");
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
@@ -163,7 +164,18 @@ async function calculateSlippage(fromCrypto, toCrypto) {
   //   getOutAmount,
   //   contract
   // );
-  amountTradeXSlippage(
+  // amountTradeXSlippage(
+  //   DEX,
+  //   fromCrypto,
+  //   toCrypto,
+  //   poolSize,
+  //   secondPriceInFirst,
+  //   firstPriceInSecond,
+  //   gasFee,
+  //   getOutAmount,
+  //   contract
+  // );
+  amountTradeXSlippageIndependent(
     DEX,
     fromCrypto,
     toCrypto,
