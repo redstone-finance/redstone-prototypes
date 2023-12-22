@@ -5,8 +5,8 @@ import {
 } from "@influxdata/influxdb-client";
 
 function isTelemetryEnabled() {
-    return false;
-}   
+  return false;
+}
 
 export interface InfluxConstructorAuthParams {
   url: string;
@@ -84,13 +84,22 @@ export class TelemetrySendService {
 
       try {
         await writeApi.close();
-      } catch (error) {
-      }
+      } catch (error) {}
     }
   }
 }
 
-export const telemetrySendService = new TelemetrySendService({
-  url: "",
-  token: ""
-});
+let telemetrySendServiceInstance: TelemetrySendService | undefined;
+
+export function getTelemetrySendService(): TelemetrySendService {
+  if (!telemetrySendServiceInstance) {
+    telemetrySendServiceInstance = new TelemetrySendService({
+      url: "",
+      token: "",
+    });
+  }
+  return telemetrySendServiceInstance;
+}
+
+const testEmptyConstructor = getTelemetrySendService();
+console.log(testEmptyConstructor);
