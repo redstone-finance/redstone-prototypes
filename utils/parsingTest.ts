@@ -1,16 +1,30 @@
-function parseInfluxUrl(influxUrl: string): [string, string, string] {
-  const parsedUrl = new URL(influxUrl);
-  const apiUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
-  const org = parsedUrl.searchParams.get("org") || "";
-  const bucket = parsedUrl.searchParams.get("bucket") || "";
-
-  return [apiUrl, org, bucket];
+interface InfluxConnectionInfo {
+  url: string;
+  org: string;
+  bucket: string;
+  precision: string;
 }
 
-const influxUrl =
-  "http://24.120.191.18:2186/api/v2/write?org=SomeOrg&bucket=some-bucket&precision=ms";
-const [url, org, bucket] = parseInfluxUrl(influxUrl);
+function parseInfluxUrl(influxUrl: string): InfluxConnectionInfo {
+  const parsedUrl = new URL(influxUrl);
+  return {
+    url: `${parsedUrl.protocol}//${parsedUrl.host}`,
+    org: parsedUrl.searchParams.get("org") || "",
+    bucket: parsedUrl.searchParams.get("bucket") || "",
+    precision: parsedUrl.searchParams.get("precision") || "ms",
+  };
+}
 
-console.log("URL:", url);
-console.log("Org:", org);
-console.log("Bucket:", bucket);
+function testParseInfluxUrl() {
+  const influxUrl =
+    "http://24.120.191.18:2186/api/v2/write?org=SomeOrg&bucket=some-bucket&precision=ms";
+  const influxConnectionInfo = parseInfluxUrl(influxUrl);
+
+  console.log("Parsed InfluxDB Connection Info:");
+  console.log("URL:", influxConnectionInfo.url);
+  console.log("Org:", influxConnectionInfo.org);
+  console.log("Bucket:", influxConnectionInfo.bucket);
+  console.log("Precision:", influxConnectionInfo.precision);
+}
+
+testParseInfluxUrl();
