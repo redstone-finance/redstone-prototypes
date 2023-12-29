@@ -9,7 +9,7 @@ const {
   stepToCSV,
   stepToCSVUnrelated,
 } = require("../utils/csv-utils");
-const { get } = require("http");
+const { safeAsyncCall } = require("../utils/error-utils");
 
 const pricesUnrelated = constants.pricesUnrelated;
 const pricesRelated = constants.pricesRelated;
@@ -24,20 +24,6 @@ async function getPriceFromCoingecko(name) {
   const apiUrl = `https://api.coingecko.com/api/v3/simple/price?ids=${name}&vs_currencies=usd`;
   const response = await axios.get(apiUrl);
   return response.data[name].usd;
-}
-
-async function getPrice(crypto) {
-  try {
-    const price = await getPriceFromCoingecko(crypto.name);
-    return price;
-  } catch (error) {
-    try {
-      const price = await redstone.getPrice(crypto.symbol);
-      return price.value;
-    } catch (error) {
-      console.log(`Price for ${crypto.symbol} not found`, error);
-    }
-  }
 }
 
 async function calculatePoolSize(token0Amount, token1Amount, token0, token1) {
@@ -375,7 +361,6 @@ function generateStepDataObject(
     firstPriceInSecond: firstPriceInSecond,
     slippageRelated,
   };
-  console.log(dataObject);
   return dataObject;
 }
 
@@ -432,6 +417,33 @@ const generatePricesArray = (step) => {
 
 //NEW CODE: --------------------------------------------------------------------------
 
+async function getPrice(crypto) {
+  try {
+    const price = await safeAsyncCall(
+      async () => {
+        return await getPriceFromCoingecko(crypto.name);
+      },
+      3,
+      6 * 1000 // 6 seconds
+    );
+    return price;
+  } catch (error) {
+    try {
+      const price = await safeAsyncCall(
+        async () => {
+          return await redstone.getPrice(crypto.symbol);
+        },
+        3,
+        6 * 1000 // 6 seconds
+      );
+      return price.value;
+    } catch (error) {
+      console.log(`Price for ${crypto.symbol} not found`, error);
+      throw error;
+    }
+  }
+}
+
 async function amountTradeXSlippageIndependent(
   DEX,
   fromCrypto,
@@ -443,9 +455,9 @@ async function amountTradeXSlippageIndependent(
   const step = 1e5; // TODO: test later 10000, 25000, 50000, 100000
   const prices = generatePricesArray(step);
 
-  console.log("finishing generating prices array");
+  console.log("Finished generating prices array");
 
-  const [firstPriceInSecond, secondPriceInFirst, results] =
+  const [receivedFirstForSecond, receivedSecondForFirst, results] =
     await calculateSlippage(
       prices,
       fromCrypto,
@@ -454,23 +466,23 @@ async function amountTradeXSlippageIndependent(
       contract
     );
 
-  console.log("finishing calculating slippage");
+  console.log("Finished calculating slippage");
   const dataObject = generateStepDataObject(
     DEX,
     fromCrypto.symbol,
     toCrypto.symbol,
     poolSize,
-    secondPriceInFirst,
-    firstPriceInSecond,
+    receivedFirstForSecond,
+    receivedSecondForFirst,
     results,
     prices
   );
-  console.log("finishing generating data object");
-  stepToCSVUnrelated(dataObject, prices, `${step / 1e3}`);
+  console.log("Finished generating data object");
+  stepToCSVUnrelated(dataObject, prices, `$${step / 1e3}k`);
 }
 
 async function getPricing(fromCrypto, toCrypto, contract, getOutAmount) {
-  // Already with Fee, simple use later
+  // Already with Fee, so we can simply multiply in later usage.
   const amountInUSD = 1000;
   const firstPriceInUSD = await getPrice(fromCrypto);
   const secondPriceInUSD = await getPrice(toCrypto);
@@ -496,6 +508,7 @@ async function getPricing(fromCrypto, toCrypto, contract, getOutAmount) {
     fromCrypto,
     contract
   );
+
   return [
     firstPriceInUSD,
     secondPriceInUSD,
@@ -514,41 +527,46 @@ async function calculateSlippage(
   const [
     firstPriceInUSD,
     secondPriceInUSD,
-    priceFirstInSecond,
-    priceSecondInFirst,
+    receivedFirstForSecond,
+    receivedSecondForFirst,
   ] = await getPricing(fromCrypto, toCrypto, contract, getOutAmount);
 
   const resultPromises = prices.map(async (price) => {
-    const slipAtoB = calculateSlip(
-      price,
-      firstPriceInUSD,
-      priceSecondInFirst,
-      fromCrypto,
-      toCrypto,
-      contract,
-      getOutAmount
-    );
-    const slipBtoA = calculateSlip(
-      price,
-      secondPriceInUSD,
-      priceFirstInSecond,
-      toCrypto,
-      fromCrypto,
-      contract,
-      getOutAmount
-    );
+    const slipAtoB = safeAsyncCall(async () => {
+      return await calculateSlip(
+        price,
+        firstPriceInUSD,
+        receivedSecondForFirst,
+        fromCrypto,
+        toCrypto,
+        contract,
+        getOutAmount
+      );
+    });
+
+    const slipBtoA = safeAsyncCall(async () => {
+      return await calculateSlip(
+        price,
+        secondPriceInUSD,
+        receivedFirstForSecond,
+        toCrypto,
+        fromCrypto,
+        contract,
+        getOutAmount
+      );
+    });
     const [resultAtoB, resultBtoA] = await Promise.all([slipAtoB, slipBtoA]);
     return [resultAtoB, resultBtoA];
   });
 
   const results = await Promise.all(resultPromises);
-  return [priceFirstInSecond, priceSecondInFirst, results];
+  return [receivedFirstForSecond, receivedSecondForFirst, results];
 }
 
 async function calculateSlip(
   amountInUSD,
   tokenInPriceInUSD,
-  tokenOutPriceInFromToken,
+  expectedSecondForFirstUnit,
   fromCrypto,
   toCrypto,
   contract,
@@ -565,7 +583,7 @@ async function calculateSlip(
     contract
   );
 
-  const expectedSecondAmount = fromAmount * tokenOutPriceInFromToken;
+  const expectedSecondAmount = fromAmount * expectedSecondForFirstUnit;
   const differencePercentage = parseFloat(
     ((receivedSecondAmount - expectedSecondAmount) / expectedSecondAmount) * 100
   ).toFixed(2);

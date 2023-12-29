@@ -146,7 +146,7 @@ function stepToCSV(data, prices) {
 }
 
 function stepToCSVUnrelated(data, prices, step) {
-  const file = `../results/stepUnrelatedSlippage$${step}k.csv`;
+  const file = `../results/stepUnrelatedSlippage${step}.csv`;
   const filePath = path.join(currentScriptDirectory, file);
 
   const headers = [
