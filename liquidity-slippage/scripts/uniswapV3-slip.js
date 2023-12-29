@@ -9,11 +9,12 @@ const {
   reversePrice,
   amountTradeXSlippageIndependent,
 } = require("../utils/common");
+const { get } = require("http");
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
-const DATA_INDEX = 0;
+const DATA_INDEX = 2;
 
 const DEX = "Uniswap V3";
 const pairs = [
@@ -130,6 +131,7 @@ async function getPricesInEachOther(fromCrypto, toCrypto) {
     secondPriceInFirst,
     toCrypto.decimals
   );
+
   return [poolSize, firstPriceInSecond, secondPriceInFirst];
 }
 
@@ -180,9 +182,6 @@ async function calculateSlippage(fromCrypto, toCrypto) {
     fromCrypto,
     toCrypto,
     poolSize,
-    secondPriceInFirst,
-    firstPriceInSecond,
-    gasFee,
     getOutAmount,
     contract
   );

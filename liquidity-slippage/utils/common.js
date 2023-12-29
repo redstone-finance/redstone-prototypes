@@ -4,7 +4,12 @@ const dotenv = require("dotenv");
 const path = require("path");
 const axios = require("axios");
 const constants = require("../utils/constants");
-const { appendToCSV, stepToCSV, stepToCSVUnrelated } = require("../utils/csv-utils");
+const {
+  appendToCSV,
+  stepToCSV,
+  stepToCSVUnrelated,
+} = require("../utils/csv-utils");
+const { get } = require("http");
 
 const pricesUnrelated = constants.pricesUnrelated;
 const pricesRelated = constants.pricesRelated;
@@ -425,14 +430,13 @@ const generatePricesArray = (step) => {
   return pricesArray;
 };
 
+//NEW CODE: --------------------------------------------------------------------------
+
 async function amountTradeXSlippageIndependent(
   DEX,
   fromCrypto,
   toCrypto,
   poolSize,
-  secondPriceInFirst,
-  firstPriceInSecond,
-  gasFee,
   getOutAmount,
   contract
 ) {
@@ -441,17 +445,16 @@ async function amountTradeXSlippageIndependent(
 
   console.log("finishing generating prices array");
 
-  const resultsIndependent = await calculatePriceDifference(
-    prices,
-    firstPriceInSecond,
-    secondPriceInFirst,
-    gasFee,
-    fromCrypto,
-    toCrypto,
-    getOutAmount,
-    contract
-  );
+  const [firstPriceInSecond, secondPriceInFirst, results] =
+    await calculateSlippage(
+      prices,
+      fromCrypto,
+      toCrypto,
+      getOutAmount,
+      contract
+    );
 
+  console.log("finishing calculating slippage");
   const dataObject = generateStepDataObject(
     DEX,
     fromCrypto.symbol,
@@ -459,11 +462,115 @@ async function amountTradeXSlippageIndependent(
     poolSize,
     secondPriceInFirst,
     firstPriceInSecond,
-    resultsIndependent,
+    results,
     prices
   );
+  console.log("finishing generating data object");
+  stepToCSVUnrelated(dataObject, prices, `${step / 1e3}`);
+}
 
-  stepToCSVUnrelated(dataObject, prices, `$${step / 1e3}k`);
+async function getPricing(fromCrypto, toCrypto, contract, getOutAmount) {
+  // Already with Fee, simple use later
+  const amountInUSD = 1000;
+  const firstPriceInUSD = await getPrice(fromCrypto);
+  const secondPriceInUSD = await getPrice(toCrypto);
+
+  const firstAmount = Number(amountInUSD / firstPriceInUSD).toFixed(
+    fromCrypto.decimals
+  );
+
+  const secondAmount = Number(amountInUSD / secondPriceInUSD).toFixed(
+    toCrypto.decimals
+  );
+
+  const receivedSecondAmount = await getOutAmount(
+    firstAmount,
+    fromCrypto,
+    toCrypto,
+    contract
+  );
+
+  const receivedFirstAmount = await getOutAmount(
+    secondAmount,
+    toCrypto,
+    fromCrypto,
+    contract
+  );
+  return [
+    firstPriceInUSD,
+    secondPriceInUSD,
+    receivedFirstAmount / secondAmount,
+    receivedSecondAmount / firstAmount,
+  ];
+}
+
+async function calculateSlippage(
+  prices,
+  fromCrypto,
+  toCrypto,
+  getOutAmount,
+  contract
+) {
+  const [
+    firstPriceInUSD,
+    secondPriceInUSD,
+    priceFirstInSecond,
+    priceSecondInFirst,
+  ] = await getPricing(fromCrypto, toCrypto, contract, getOutAmount);
+
+  const resultPromises = prices.map(async (price) => {
+    const slipAtoB = calculateSlip(
+      price,
+      firstPriceInUSD,
+      priceSecondInFirst,
+      fromCrypto,
+      toCrypto,
+      contract,
+      getOutAmount
+    );
+    const slipBtoA = calculateSlip(
+      price,
+      secondPriceInUSD,
+      priceFirstInSecond,
+      toCrypto,
+      fromCrypto,
+      contract,
+      getOutAmount
+    );
+    const [resultAtoB, resultBtoA] = await Promise.all([slipAtoB, slipBtoA]);
+    return [resultAtoB, resultBtoA];
+  });
+
+  const results = await Promise.all(resultPromises);
+  return [priceFirstInSecond, priceSecondInFirst, results];
+}
+
+async function calculateSlip(
+  amountInUSD,
+  tokenInPriceInUSD,
+  tokenOutPriceInFromToken,
+  fromCrypto,
+  toCrypto,
+  contract,
+  getOutAmount
+) {
+  const fromAmount = Number(amountInUSD / tokenInPriceInUSD).toFixed(
+    fromCrypto.decimals
+  );
+
+  const receivedSecondAmount = await getOutAmount(
+    fromAmount,
+    fromCrypto,
+    toCrypto,
+    contract
+  );
+
+  const expectedSecondAmount = fromAmount * tokenOutPriceInFromToken;
+  const differencePercentage = parseFloat(
+    ((receivedSecondAmount - expectedSecondAmount) / expectedSecondAmount) * 100
+  ).toFixed(2);
+
+  return differencePercentage;
 }
 
 module.exports = {
