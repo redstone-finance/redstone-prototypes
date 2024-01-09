@@ -10,7 +10,14 @@ const provider = new ethers.providers.JsonRpcProvider(
 );
 
 // Replace with your crypto address
-const cryptoAddress = "0x40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f";
+// const cryptoAddress = "0x8b12bd54ca9b2311960057c8f3c88013e79316e3";
+const cryptoAddress = process.argv[2];
+if (!cryptoAddress) {
+  console.error(
+    "Crypto address is missing. Usage: decimals.js <cryptoAddress>"
+  );
+  process.exit(1);
+}
 
 async function getDecimals() {
   const contract = new ethers.Contract(

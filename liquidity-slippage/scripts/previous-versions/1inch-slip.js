@@ -2,8 +2,8 @@ const axios = require("axios");
 const dotenv = require("dotenv");
 const path = require("path");
 const ethers = require("ethers");
-const constants = require("../utils/constants");
-const { amountTradeXSlippage } = require("../utils/common");
+const constants = require("../../utils/constants");
+const { amountTradeXSlippage } = require("../../utils/common");
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const ONEinch_API_KEY = process.env.ONEinch_API_KEY;

@@ -1,7 +1,7 @@
 const ethers = require("ethers");
 const dotenv = require("dotenv");
 const path = require("path");
-const constants = require("../utils/constants");
+const constants = require("../../utils/constants");
 const {
   calculatePoolSize,
   calculateAndWriteToCSV,
@@ -10,7 +10,7 @@ const {
   calcPriceSecondInFirst,
   getApproximateTokensAmountInPool,
   calculatePriceDifference,
-} = require("../utils/common");
+} = require("../../utils/common");
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;

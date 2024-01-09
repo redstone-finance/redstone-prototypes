@@ -419,12 +419,13 @@ const generatePricesArray = (step) => {
 
 async function getPrice(crypto) {
   try {
+    console.log(`Getting price for ${crypto.symbol}`);
     const price = await safeAsyncCall(
       async () => {
         return await getPriceFromCoingecko(crypto.name);
       },
       3,
-      6 * 1000 // 6 seconds
+      65 * 1000 // 65 seconds
     );
     return price;
   } catch (error) {
@@ -454,8 +455,6 @@ async function amountTradeXSlippageIndependent(
 ) {
   const step = 1e5; // TODO: test later 10000, 25000, 50000, 100000
   const prices = generatePricesArray(step);
-
-  console.log("Finished generating prices array");
 
   const [receivedFirstForSecond, receivedSecondForFirst, results] =
     await calculateSlippage(
