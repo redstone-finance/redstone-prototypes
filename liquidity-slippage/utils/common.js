@@ -427,6 +427,7 @@ async function getPrice(crypto) {
       3,
       65 * 1000 // 65 seconds
     );
+    console.log("Price found:", price)
     return price;
   } catch (error) {
     try {

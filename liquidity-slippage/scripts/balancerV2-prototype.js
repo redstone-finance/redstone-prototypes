@@ -70,7 +70,10 @@ async function getAmountOut(poolId, tokenIn, tokenOut, amountIn) {
 // Example usage
 const poolId =
   "0x3fa8c89704e5d07565444009e5d9e624b40be813000000000000000000000599"; // Replace with the actual pool ID
-//GHO to LUSD
+// GHO to LUSD
+// 0x3fa8c89704e5d07565444009e5d9e624b40be813000000000000000000000599;
+// 0x3fa8c89704e5d07565444009e5d9e624b40be813;
+
 const tokenInAddress = "0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f"; // Replace with the address of Token A
 const tokenOutAddress = "0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"; // Replace with the address of Token B
 const amountIn = ethers.utils.parseUnits("1", 18); // Replace '1.0' with the amount of Token A and '18' with its decimals
