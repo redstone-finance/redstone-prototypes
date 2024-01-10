@@ -10,7 +10,7 @@ const provider = new ethers.providers.JsonRpcProvider(
 );
 
 // Balancer Vault ABI
-const balancerVaultABI = require("./BalancerVault.abi.json");
+const balancerVaultABI = require("../BalancerVault.abi.json");
 
 // Balancer Vault Address
 const balancerVaultAddress = "0xBA12222222228d8Ba445958a75a0704d566BF2C8";

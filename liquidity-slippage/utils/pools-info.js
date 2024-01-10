@@ -119,77 +119,40 @@ const poolsInfo = {
   ],
   "Balancer V2": [
     // {
-    //   poolAddress: "0x3fa8c89704e5d07565444009e5d9e624b40be813",
+    //   poolId:
+    //     "0xcfca23ca9ca720b6e98e3eb9b6aa0ffc4a5c08b9000200000000000000000274",
+    //   cryptoASymbol: "AURA",
+    //   cryptoBSymbol: "WETH",
+    //   poolSize: 2.95 * 1e6,
+    // },
+    // {
     //   poolId:
     //     "0x3fa8c89704e5d07565444009e5d9e624b40be813000000000000000000000599",
     //   cryptoASymbol: "GHO",
-    //   cryptoAIndex: 0,
     //   cryptoBSymbol: "LUSD",
-    //   cryptoBIndex: 1,
-    //   tokenAddresses: [
-    //     "0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f",
-    //     "0x5f98805A4E8be255a32880FDeC7F6728C6568bA0",
-    //   ],
+    //   poolSize: 6.4 * 1e4,
     // },
     // {
-    //   poolAddress: "0x8353157092ed8be69a9df8f95af097bbf33cb2af",
     //   poolId:
-    //     "0x8353157092ed8be69a9df8f95af097bbf33cb2af0000000000000000000005d9",
-    //   cryptoASymbol: "GHO",
-    //   cryptoAIndex: 0,
-    //   cryptoBSymbol: "USDT",
-    //   cryptoBIndex: 1,
-    //   tokenAddresses: [
-    //     "0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f",
-    //     "0xdac17f958d2ee523a2206206994597c13d831ec7",
-    //   ],
+    //     "0x76fcf0e8c7ff37a47a799fa2cd4c13cde0d981c90002000000000000000003d2",
+    //   cryptoASymbol: "OHM",
+    //   cryptoBSymbol: "DAI",
+    //   poolSize: 4.7 * 1e3,
     // },
     {
-      poolId: "0x8353157092ed8be69a9df8f95af097bbf33cb2af0000000000000000000005d9",
+      poolId:
+        "0x8353157092ed8be69a9df8f95af097bbf33cb2af0000000000000000000005d9",
+      cryptoASymbol: "GHO",
+      cryptoBSymbol: "USDT",
+      poolSize: 5.94 * 1e6,
+    },
+    {
+      poolId:
+        "0x8353157092ed8be69a9df8f95af097bbf33cb2af0000000000000000000005d9",
       cryptoASymbol: "GHO",
       cryptoBSymbol: "USDC",
-    }
-
-    //     USDT: {
-    //   GHO: {
-    //     baseTokenDecimals: 18,
-    //     pairedTokenDecimals: 6,
-    //     swaps: [
-    //       {
-    //         poolId:
-    //           "0x8353157092ed8be69a9df8f95af097bbf33cb2af0000000000000000000005d9",
-    //         assetInIndex: 0,
-    //         assetOutIndex: 1,
-    //         amount: BIGGER_AMOUNT.toString(),
-    //         userData: "0x",
-    //       },
-    //     ],
-    //     tokenAddresses: [
-    //       "0x40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f",
-    //       "0xdac17f958d2ee523a2206206994597c13d831ec7",
-    //     ],
-    //   },
-    // },
-    // {
-    //   poolAddress: "0x3fa8c89704e5d07565444009e5d9e624b40be813",
-    //   cryptoASymbol: "GHO",
-    //   cryptoBSymbol: "LUSD",
-    // },
-    // {
-    //   poolAddress: "0x3fa8c89704e5d07565444009e5d9e624b40be813",
-    //   cryptoASymbol: "GHO",
-    //   cryptoBSymbol: "LUSD",
-    // },
-    // {
-    //   poolAddress: "0x3fa8c89704e5d07565444009e5d9e624b40be813",
-    //   cryptoASymbol: "GHO",
-    //   cryptoBSymbol: "LUSD",
-    // },
-    // {
-    //   poolAddress: "0x3fa8c89704e5d07565444009e5d9e624b40be813",
-    //   cryptoASymbol: "GHO",
-    //   cryptoBSymbol: "LUSD",
-    // },
+      poolSize: 5.94 * 1e6,
+    },
   ],
 
   // Add more DEX and pools as needed

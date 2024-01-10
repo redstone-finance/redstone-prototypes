@@ -4,7 +4,6 @@ const path = require("path");
 const constants = require("../utils/constants");
 const poolsInfo = require("../utils/pools-info");
 const {
-  getApproximateTokensAmountInPool,
   amountTradeXSlippageIndependent,
 } = require("../utils/common");
 
@@ -25,10 +24,94 @@ const FUNDS = {
   fromInternalBalance: false,
   toInternalBalance: false,
 };
-let poolId, fromIndex, toIndex, cryptoFromSymbol;
-// let tokenAddress;
+let poolId;
 
-const balancerVaultABI = require("./BalancerVault.abi.json");
+const balancerVaultABI = [
+  {
+    inputs: [
+      {
+        internalType: "enum IVault.SwapKind",
+        name: "kind",
+        type: "uint8",
+      },
+      {
+        components: [
+          {
+            internalType: "bytes32",
+            name: "poolId",
+            type: "bytes32",
+          },
+          {
+            internalType: "uint256",
+            name: "assetInIndex",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "assetOutIndex",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "amount",
+            type: "uint256",
+          },
+          {
+            internalType: "bytes",
+            name: "userData",
+            type: "bytes",
+          },
+        ],
+        internalType: "struct IVault.BatchSwapStep[]",
+        name: "swaps",
+        type: "tuple[]",
+      },
+      {
+        internalType: "contract IAsset[]",
+        name: "assets",
+        type: "address[]",
+      },
+      {
+        components: [
+          {
+            internalType: "address",
+            name: "sender",
+            type: "address",
+          },
+          {
+            internalType: "bool",
+            name: "fromInternalBalance",
+            type: "bool",
+          },
+          {
+            internalType: "address payable",
+            name: "recipient",
+            type: "address",
+          },
+          {
+            internalType: "bool",
+            name: "toInternalBalance",
+            type: "bool",
+          },
+        ],
+        internalType: "struct IVault.FundManagement",
+        name: "funds",
+        type: "tuple",
+      },
+    ],
+    name: "queryBatchSwap",
+    outputs: [
+      {
+        internalType: "int256[]",
+        name: "",
+        type: "int256[]",
+      },
+    ],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+];
+
 const contract = new ethers.Contract(
   BALANCER_VAULT_ADDRESS,
   balancerVaultABI,
@@ -36,13 +119,6 @@ const contract = new ethers.Contract(
 );
 
 async function getOutAmount(fromAmount, fromCrypto, toCrypto, contract) {
-  // let [from, to] = [fromIndex, toIndex];
-  // // let tokenAddresses = [fromCrypto.address, toCrypto.address]; 
-  // if (fromCrypto.symbol !== cryptoFromSymbol) {
-  //   [from, to] = [toIndex, fromIndex];
-  //   // tokenAddresses = [toCrypto.address, fromCrypto.address];
-  // }
-
   const batchSwapSteps = [
     {
       poolId: poolId,
@@ -57,7 +133,6 @@ async function getOutAmount(fromAmount, fromCrypto, toCrypto, contract) {
   ];
 
   const tokenAddresses = [fromCrypto.address, toCrypto.address]; 
-  //todo: maybe always the same order - so we can add to poolsInfo or write to let in 
 
   const amounts = await contract.callStatic.queryBatchSwap(
     SwapExactIn,
@@ -65,17 +140,10 @@ async function getOutAmount(fromAmount, fromCrypto, toCrypto, contract) {
     tokenAddresses,
     FUNDS
   );
-
-  console.log("FromCrypto:", fromCrypto.symbol);
-  // console.log("from:", from);
-  // console.log("ToCrypto:", toCrypto.symbol);
-  // console.log("to:", to);
-  console.log("FromAmount:", fromAmount.toString());
-  // console.log("Amount0:", amounts[0].toString());
-  console.log("Amount1:", amounts[1].toString());
-  console.log("Formatted Amount1:", ethers.utils.formatUnits(amounts[1].toString(), toCrypto.decimals));
-  // Amount1: -153 381513897880760078;
-  // Amount1: -469 204000479774480495;
+  
+  // console.log("fromCrypto: ", fromCrypto.symbol);
+  // console.log("amounts1: ", amounts[1].toString());
+  // console.log("formatted amounts1: ", ethers.utils.formatUnits(amounts[1].toString(), toCrypto.decimals) * -1);
 
   return (
     ethers.utils.formatUnits(amounts[1].toString(), toCrypto.decimals) * -1
@@ -85,7 +153,7 @@ async function getOutAmount(fromAmount, fromCrypto, toCrypto, contract) {
 async function calculateSlippage(pool) {
   console.log(
     `Started calculating slippage on ${DEX} for pool: `,
-    pool.poolAddress,
+    pool.poolId.slice(0, 42), // pool address is first 20 bytes of poolId
     "...",
     pool.cryptoASymbol,
     pool.cryptoBSymbol
@@ -93,7 +161,7 @@ async function calculateSlippage(pool) {
   const fromCrypto = constants[pool.cryptoASymbol];
   const toCrypto = constants[pool.cryptoBSymbol];
 
-  const poolSize = 0;
+  const poolSize = pool.poolSize;
   await amountTradeXSlippageIndependent(
     DEX,
     fromCrypto,
@@ -107,12 +175,7 @@ async function calculateSlippage(pool) {
 async function findSlippage() {
   const pools = poolsInfo.poolsInfo[DEX];
   for (const pool of pools) {
-    //todo: maybe pool Id is different than pool address !!
     poolId = pool.poolId;
-    // fromIndex = pool.cryptoAIndex;
-    // toIndex = pool.cryptoBIndex;
-    cryptoFromSymbol = pool.cryptoASymbol;
-    // tokenAddresses = pool.tokenAddresses;
     await calculateSlippage(pool);
   }
 }

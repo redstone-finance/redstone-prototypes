@@ -403,19 +403,21 @@ async function amountTradeXSlippage(
   stepToCSV(dataObject, prices);
 }
 
-const generatePricesArray = (step) => {
-  const startPrice = step;
-  const endPrice = 1e7;
+//NEW CODE: --------------------------------------------------------------------------
 
-  const pricesArray = [];
+function appendToArray(startPrice, endPrice, step, array) {
   for (let price = startPrice; price <= endPrice; price += step) {
-    pricesArray.push(price);
+    array.push(price);
   }
+}
 
+const generatePricesArray = () => {
+  const pricesArray = [];
+  appendToArray(1e4, 1e5, 1e4, pricesArray);
+  appendToArray(1e5, 1e6, 2.5e4, pricesArray);
+  appendToArray(1e6, 1e7, 1e5, pricesArray);
   return pricesArray;
 };
-
-//NEW CODE: --------------------------------------------------------------------------
 
 async function getPrice(crypto) {
   try {
@@ -427,7 +429,7 @@ async function getPrice(crypto) {
       3,
       65 * 1000 // 65 seconds
     );
-    console.log("Price found:", price)
+    console.log("Price found:", price);
     return price;
   } catch (error) {
     try {
@@ -454,8 +456,7 @@ async function amountTradeXSlippageIndependent(
   getOutAmount,
   contract
 ) {
-  const step = 1e5; // TODO: test later 10000, 25000, 50000, 100000
-  const prices = generatePricesArray(step);
+  const prices = generatePricesArray();
 
   const [receivedFirstForSecond, receivedSecondForFirst, results] =
     await calculateSlippage(
@@ -478,7 +479,7 @@ async function amountTradeXSlippageIndependent(
     prices
   );
   console.log("Finished generating data object");
-  stepToCSVUnrelated(dataObject, prices, `$${step / 1e3}k`);
+  await stepToCSVUnrelated(dataObject, prices);
 }
 
 async function getPricing(fromCrypto, toCrypto, contract, getOutAmount) {

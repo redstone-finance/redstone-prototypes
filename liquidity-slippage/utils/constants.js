@@ -503,6 +503,12 @@ const constants = {
     address: "0x4591dbff62656e7859afe5e45f6f47d3669fbb28",
     decimals: 18,
   },
+  AURA: {
+    symbol: "AURA",
+    name: "aura-finance",
+    address: "0xc0c293ce456ff0ed870add98a0828dd4d2903dbf",
+    decimals: 18,
+  },
 
   pricesUnrelated: [1e4, 1e6, 1e8],
   pricesRelated: [1e-3, 1e-2, 1e-1],
