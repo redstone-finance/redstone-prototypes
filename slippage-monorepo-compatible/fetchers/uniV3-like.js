@@ -2,13 +2,7 @@ const ethers = require("ethers");
 const dotenv = require("dotenv");
 const path = require("path");
 const { processUniswapV3Config } = require("../utils/poolsFromManifest");
-
-// const poolsInfo = require("../utils/pools-info");
-// const constants = require("../utils/constants");
-// const {
-//   getApproximateTokensAmountInPool,
-//   amountTradeXSlippageIndependent,
-// } = require("../utils/common");
+const { calculatePoolSlippage } = require("../utils/slippage");
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
@@ -16,14 +10,13 @@ const provider = new ethers.providers.JsonRpcProvider(
   `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`
 );
 
-// TODO: update in monorepo, test both cases
-const address = "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6"; // Uniswap V3 Quoter address
+const quoterAddress = "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6"; // Uniswap V3 Quoter address
 const abi = [
   "function quoteExactInputSingle(address tokenIn, address tokenOut, uint24 fee, uint256 amountIn, uint160 sqrtPriceLimitX96) external returns (uint256 amountOut)",
 ];
-let pool, contract;
+let pool;
 
-// const contract = new ethers.Contract(address, abi, provider);
+const contract = new ethers.Contract(quoterAddress, abi, provider);
 
 async function getOutAmount(fromAmount, fromCrypto, toCrypto) {
   const amountOut = await contract.callStatic.quoteExactInputSingle(
@@ -37,27 +30,9 @@ async function getOutAmount(fromAmount, fromCrypto, toCrypto) {
 }
 
 async function findPoolSlippage() {
-  //   console.log(
-  //     `Started calculating slippage on ${DEX} for pool: `,
-  //     pool.poolAddress,
-  //     "...",
-  //     pool.cryptoASymbol,
-  //     pool.cryptoBSymbol
-  //   );
-  //   const poolAddress = pool.poolAddress;
-  //   const fromCrypto = constants[pool.cryptoASymbol];
-  //   const toCrypto = constants[pool.cryptoBSymbol];
-  //   fee = pool.fee;
-
-  //   poolSize = await getApproximateTokensAmountInPool(
-  //     poolAddress,
-  //     fromCrypto,
-  //     toCrypto
-  //   );
-  //   console.log("Pool size: ", poolSize);
-
   await calculatePoolSlippage(
     pool.DEX,
+    pool.poolAddress,
     pool.tokenA,
     pool.tokenB,
     getOutAmount
@@ -66,15 +41,15 @@ async function findPoolSlippage() {
 
 async function findPoolsSlippages() {
   const pools = await processUniswapV3Config();
-  console.log("pools: ", pools);
-  for (const poolData of pools) {
+
+  for (const [index, poolData] of pools.entries()) {
+    console.log(`Processing pool ${index + 1}/${pools.length}`);
     pool = poolData;
-    contract = new ethers.Contract(pool.quoterAddress, abi, provider); //TODO: update in monorepo? check if correct
-    console.log("pool: ", pool);
+    //TODO: why pool.quoterAddress is different then our quoterAddress?
     await findPoolSlippage();
   }
 }
 
-findSlippage().catch((err) => {
+findPoolsSlippages().catch((err) => {
   console.error("Error occurred:", err);
 });

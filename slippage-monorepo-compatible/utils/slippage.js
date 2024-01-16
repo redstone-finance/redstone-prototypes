@@ -1,0 +1,176 @@
+const axios = require("axios");
+const redstone = require("redstone-api");
+const { safeAsyncCall } = require("../utils/error");
+const {
+  writePoolSlippageToCSV,
+  writeMissingPoolToCSV,
+} = require("../utils/csv");
+
+async function getPoolSize(poolAddress) {
+  const network = "eth";
+  const apiUrl = `https://api.geckoterminal.com/api/v2/networks/${network}/pools/${poolAddress}`;
+  const response = await axios.get(apiUrl);
+  const reserveInUSD = response.data.data.attributes.reserve_in_usd;
+  console.log(`Reserve in USD for pool ${poolAddress}: ${reserveInUSD}`);
+  return Math.floor(reserveInUSD);
+}
+
+async function getTokenPriceInUSD(tokenSymbol) {
+  if (tokenSymbol === "WETH" || tokenSymbol === "FRXETH") {
+    tokenSymbol = "ETH"; //TODO: maybe in future different methodology
+  }
+  const price = await redstone.getPrice(tokenSymbol);
+  console.log(`Token price ${tokenSymbol} in USD: ${price.value}`);
+  return price.value;
+}
+
+function appendToArray(startPrice, endPrice, step, array) {
+  for (let price = startPrice; price <= endPrice; price += step) {
+    array.push(price);
+  }
+}
+
+const generatePricesArray = () => {
+  const pricesArray = [];
+  appendToArray(1e4, 1e5, 1e4, pricesArray);
+  appendToArray(1e5, 1e6, 2.5e4, pricesArray);
+  appendToArray(1e6, 1e7, 1e5, pricesArray);
+  return pricesArray;
+};
+
+async function getPricing(fromCrypto, toCrypto, getOutAmount) {
+  const amountInUSD = 1000;
+  const firstPriceInUSD = await safeAsyncCall(() =>
+    getTokenPriceInUSD(fromCrypto.symbol)
+  );
+  const secondPriceInUSD = await safeAsyncCall(() =>
+    getTokenPriceInUSD(toCrypto.symbol)
+  );
+
+  const firstAmount = Number(amountInUSD / firstPriceInUSD).toFixed(
+    fromCrypto.decimals
+  );
+  const secondAmount = Number(amountInUSD / secondPriceInUSD).toFixed(
+    toCrypto.decimals
+  );
+
+  const receivedSecondAmount = await safeAsyncCall(() =>
+    getOutAmount(firstAmount, fromCrypto, toCrypto)
+  );
+
+  const receivedFirstAmount = await safeAsyncCall(() =>
+    getOutAmount(secondAmount, toCrypto, fromCrypto)
+  );
+
+  return [
+    firstPriceInUSD,
+    secondPriceInUSD,
+    receivedFirstAmount / secondAmount,
+    receivedSecondAmount / firstAmount,
+  ];
+}
+
+async function calculateSlip(
+  amountInUSD,
+  tokenInPriceInUSD,
+  expectedSecondForFirstUnit,
+  fromCrypto,
+  toCrypto,
+  getOutAmount
+) {
+  const fromAmount = Number(amountInUSD / tokenInPriceInUSD).toFixed(
+    fromCrypto.decimals
+  );
+
+  const receivedSecondAmount = await safeAsyncCall(() =>
+    getOutAmount(fromAmount, fromCrypto, toCrypto)
+  );
+
+  const expectedSecondAmount = fromAmount * expectedSecondForFirstUnit;
+  const differencePercentage = parseFloat(
+    ((receivedSecondAmount - expectedSecondAmount) / expectedSecondAmount) * 100
+  ).toFixed(2);
+
+  return differencePercentage;
+}
+
+async function calculateSlippage(prices, fromCrypto, toCrypto, getOutAmount) {
+  const [
+    firstPriceInUSD,
+    secondPriceInUSD,
+    receivedFirstForSecond,
+    receivedSecondForFirst,
+  ] = await getPricing(fromCrypto, toCrypto, getOutAmount);
+
+  const resultPromises = prices.map(async (price) => {
+    const slipAtoB = calculateSlip(
+      price,
+      firstPriceInUSD,
+      receivedSecondForFirst,
+      fromCrypto,
+      toCrypto,
+      getOutAmount
+    );
+    const slipBtoA = calculateSlip(
+      price,
+      secondPriceInUSD,
+      receivedFirstForSecond,
+      toCrypto,
+      fromCrypto,
+      getOutAmount
+    );
+    const [resultAtoB, resultBtoA] = await Promise.all([slipAtoB, slipBtoA]);
+    return [resultAtoB, resultBtoA];
+  });
+
+  const results = await Promise.all(resultPromises);
+  return [receivedFirstForSecond, receivedSecondForFirst, results];
+}
+
+async function calculatePoolSlippage(
+  DEX,
+  poolAddress,
+  fromCrypto,
+  toCrypto,
+  getOutAmount
+) {
+  try {
+    const poolSize = await safeAsyncCall(() => getPoolSize(poolAddress));
+    const prices = generatePricesArray();
+
+    const [receivedFirstForSecond, receivedSecondForFirst, results] =
+      await calculateSlippage(prices, fromCrypto, toCrypto, getOutAmount);
+    console.log("Finished calculating slippage for DEX: ", DEX, poolAddress);
+    await writePoolSlippageToCSV(
+      DEX,
+      poolAddress,
+      fromCrypto.symbol,
+      toCrypto.symbol,
+      poolSize,
+      receivedFirstForSecond,
+      receivedSecondForFirst,
+      results,
+      prices
+    );
+  } catch (error) {
+    console.error(
+      "Error while calculating pool slippage: ",
+      DEX,
+      poolAddress,
+      fromCrypto.symbol,
+      toCrypto.symbol,
+    );
+    // console.error(error);
+    await writeMissingPoolToCSV(
+      DEX,
+      poolAddress,
+      fromCrypto.symbol,
+      toCrypto.symbol
+    );
+  }
+}
+
+module.exports = {
+  getTokenPriceInUSD,
+  calculatePoolSlippage,
+};

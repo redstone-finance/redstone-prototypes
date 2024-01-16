@@ -533,7 +533,7 @@ async function calculateSlippage(
   ] = await getPricing(fromCrypto, toCrypto, contract, getOutAmount);
 
   const resultPromises = prices.map(async (price) => {
-    const slipAtoB = safeAsyncCall(async () => {
+    const slipAtoB = await safeAsyncCall(async () => {
       return await calculateSlip(
         price,
         firstPriceInUSD,
