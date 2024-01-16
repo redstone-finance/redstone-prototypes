@@ -1,4 +1,4 @@
-const fs = require("fs");
+const fs = require("fs").promises;
 const createCsvWriter = require("csv-writer").createObjectCsvWriter;
 const path = require("path");
 
@@ -55,7 +55,9 @@ async function appendPoolSlippageToCSV(data, prices) {
     headers.push({ id: priceKeyBtoA, title: priceKeyBtoA });
   });
 
-  if (!fs.existsSync(filePath)) {
+  try {
+    await fs.access(filePath);
+  } catch (error) {
     const csvWriter = createCsvWriter({
       path: filePath,
       header: headers,
@@ -140,7 +142,9 @@ async function writeMissingPoolToCSV(
     PoolAddress: poolAddress,
   };
 
-  if (!fs.existsSync(filePath)) {
+  try {
+    await fs.access(filePath);
+  } catch (error) {
     const csvWriter = createCsvWriter({
       path: filePath,
       header: headers,
@@ -159,7 +163,45 @@ async function writeMissingPoolToCSV(
   });
 }
 
+async function checkIfPoolAlreadyExists(
+  DEX,
+  poolAddress,
+  cryptoASymbol,
+  cryptoBSymbol,
+  fileCSV
+) {
+  const file = `../results-csv/${fileCSV}.csv`;
+  const filePath = path.join(currentScriptDirectory, file);
+
+  const dataToCheck = {
+    DEX: DEX,
+    PoolAddress: poolAddress,
+    TokenA: cryptoASymbol,
+    TokenB: cryptoBSymbol,
+  };
+
+  try {
+    await fs.access(filePath);
+  } catch (error) {
+    return false;
+  }
+
+  const data = await fs.readFile(filePath, { encoding: "utf8" });
+  const rows = data.split("\n");
+
+  return rows.some((row) => {
+    const [dex, tokenA, tokenB, poolAddr] = row.split(",");
+    return (
+      dex === dataToCheck.DEX &&
+      poolAddr === dataToCheck.PoolAddress &&
+      ((tokenA === dataToCheck.TokenA && tokenB === dataToCheck.TokenB) ||
+        (tokenA === dataToCheck.TokenB && tokenB === dataToCheck.TokenA))
+    );
+  });
+}
+
 module.exports = {
   writePoolSlippageToCSV,
   writeMissingPoolToCSV,
+  checkIfPoolAlreadyExists,
 };

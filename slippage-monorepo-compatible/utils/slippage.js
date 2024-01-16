@@ -4,15 +4,33 @@ const { safeAsyncCall } = require("../utils/error");
 const {
   writePoolSlippageToCSV,
   writeMissingPoolToCSV,
+  checkIfPoolAlreadyExists,
 } = require("../utils/csv");
 
-async function getPoolSize(poolAddress) {
+async function getPoolSize(poolAddress, getTokenAddress = false) {
   const network = "eth";
   const apiUrl = `https://api.geckoterminal.com/api/v2/networks/${network}/pools/${poolAddress}`;
   const response = await axios.get(apiUrl);
-  const reserveInUSD = response.data.data.attributes.reserve_in_usd;
+  data = response.data.data;
+  const reserveInUSD = data.attributes.reserve_in_usd;
   console.log(`Reserve in USD for pool ${poolAddress}: ${reserveInUSD}`);
   return Math.floor(reserveInUSD);
+}
+
+async function getPoolTokens(poolAddress) {
+  const network = "eth";
+  const apiUrl = `https://api.geckoterminal.com/api/v2/networks/${network}/pools/${poolAddress}`;
+  const response = await axios.get(apiUrl);
+  const data = response.data.data;
+  const baseTokenId = data.relationships.base_token.data.id.split("_")[1];
+  const quoteTokenId = data.relationships.quote_token.data.id.split("_")[1];
+  const poolName = data.attributes.name.split(" / ");
+
+  const tokens = {
+    [poolName[0].toLowerCase()]: baseTokenId,
+    [poolName[1].toLowerCase()]: quoteTokenId,
+  };
+  return tokens;
 }
 
 async function getTokenPriceInUSD(tokenSymbol) {
@@ -135,6 +153,23 @@ async function calculatePoolSlippage(
   getOutAmount
 ) {
   try {
+    if (
+      await checkIfPoolAlreadyExists(
+        DEX,
+        poolAddress,
+        fromCrypto.symbol,
+        toCrypto.symbol,
+        "StepSlippage"
+      )
+    ) {
+      console.log(
+        "Pool already exists in Slippage CSV file: ",
+        DEX,
+        poolAddress
+      );
+      return;
+    }
+
     const poolSize = await safeAsyncCall(() => getPoolSize(poolAddress));
     const prices = generatePricesArray();
 
@@ -158,19 +193,30 @@ async function calculatePoolSlippage(
       DEX,
       poolAddress,
       fromCrypto.symbol,
-      toCrypto.symbol,
-    );
-    // console.error(error);
-    await writeMissingPoolToCSV(
-      DEX,
-      poolAddress,
-      fromCrypto.symbol,
       toCrypto.symbol
     );
+    // console.error(error);
+    if (
+      !(await checkIfPoolAlreadyExists(
+        DEX,
+        poolAddress,
+        fromCrypto.symbol,
+        toCrypto.symbol,
+        "StepSlippageMissingPools"
+      ))
+    ) {
+      await writeMissingPoolToCSV(
+        DEX,
+        poolAddress,
+        fromCrypto.symbol,
+        toCrypto.symbol
+      );
+    }
   }
 }
 
 module.exports = {
   getTokenPriceInUSD,
+  getPoolTokens,
   calculatePoolSlippage,
 };
