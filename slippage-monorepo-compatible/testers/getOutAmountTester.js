@@ -230,13 +230,13 @@ async function getOutAmountBalancer(fromAmount, fromCrypto, toCrypto) {
 
   const tokenAddresses = [fromCrypto.address, toCrypto.address];
 
-  console.log(
-    "queryBatchSwap: ",
-    SwapExactIn,
-    batchSwapSteps,
-    tokenAddresses,
-    FUNDS
-  );
+  // console.log(
+  //   "queryBatchSwap: ",
+  //   SwapExactIn,
+  //   batchSwapSteps,
+  //   tokenAddresses,
+  //   FUNDS
+  // );
 
   const amounts = await contract.callStatic.queryBatchSwap(
     SwapExactIn,
@@ -269,16 +269,26 @@ async function testGetOutAmountBalancerV2() {
         fromCrypto,
         toCrypto
       );
+
+      const amountOut2 = await getOutAmountBalancer(
+        fromAmount,
+        toCrypto,
+        fromCrypto
+      );
     } catch (error) {
-      console.log("Failed above... ------------------------------------------------")
+      console.log(
+        "Failed above... ------------------------------------------------"
+      );
       missedBalancer.push(pool);
+      // console.log(error);
+      // throw error;
     }
   }
 
   console.log("Missed with Balancer: ", missedBalancer.length);
   console.log("Total number of pools: ", pools.length);
 
-  // console.log("Missed with Balancer: ", missedBalancer);
+  console.log("Missed with Balancer: ", missedBalancer);
 }
 
 // testGetOutAmountUniswapV3();

@@ -146,20 +146,24 @@ async function processUniV2LikeConfig() {
   return poolsInfo;
 }
 
-function transformToJsonLikeString(dataString) {
+function transformToJsonLikeStringCurve(dataString) {
   let transformed = dataString.replace(/(\w+):/g, '"$1":');
   transformed = transformed.replace(/ethereumProvider/g, `"ethereum"`);
   transformed = transformed.replace(/arbitrumProvider/g, `"arbitrum"`);
   transformed = transformed.replace(/"multiBlockConfig":\s*[\w_]+,\s*/g, "");
-
-  transformed = transformed.replace(/"\s*(amount|swapAmount)":\s*.*,\s*/g, ""); //Balancer
-  transformed = transformed.replace(/,\s*\]/g, "]"); // Balancer
-
   transformed = transformed.replace(/,\s*}/g, " }");
   transformed = transformed.replace(/(\d)e(\d+)/g, (match, base, exponent) => {
-    return exponent;
+    return exponent; //TODO: attention it can ruin addresses
   });
 
+  return "{\n" + transformed + "\n}";
+}
+
+function transformToJsonLikeStringBalancer(dataString) {
+  let transformed = dataString.replace(/(\w+):/g, '"$1":');
+  transformed = transformed.replace(/"\s*(amount|swapAmount)":\s*.*,\s*/g, "");
+  transformed = transformed.replace(/,\s*\]/g, "]");
+  transformed = transformed.replace(/,\s*}/g, " }");
   return "{\n" + transformed + "\n}";
 }
 
@@ -182,7 +186,7 @@ async function processCurveConfig() {
       .substring(startIndex + startSequence.length, endIndex)
       .trim();
 
-    const transformedString = transformToJsonLikeString(jsonLikeString);
+    const transformedString = transformToJsonLikeStringCurve(jsonLikeString);
     const config = JSON.parse(transformedString);
     const poolsInfo = [];
 
@@ -250,7 +254,7 @@ async function processBalancerConfig() {
       .substring(startIndex + startSequence.length, endIndex)
       .trim();
 
-    const transformedString = transformToJsonLikeString(jsonLikeString);
+    const transformedString = transformToJsonLikeStringBalancer(jsonLikeString);
 
     const config = JSON.parse(transformedString);
     const poolsInfo = [];

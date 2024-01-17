@@ -16,9 +16,9 @@ async function safeAsyncCall(
         await new Promise((resolve) => setTimeout(resolve, retryInterval));
         return execute();
       } else {
-        console.error(
-          `Max retries reached. Exiting. Function: ${asyncFunction}`
-        );
+        // console.error(
+        //   `Max retries reached. Exiting. Function: ${asyncFunction}`
+        // );
         throw error;
       }
     }
