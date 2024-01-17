@@ -34,8 +34,15 @@ async function getPoolTokens(poolAddress) {
 }
 
 async function getTokenPriceInUSD(tokenSymbol) {
-  if (tokenSymbol === "WETH" || tokenSymbol === "FRXETH") {
+  if (
+    tokenSymbol === "WETH" ||
+    tokenSymbol === "FRXETH" ||
+    tokenSymbol === "ALETH"
+  ) {
     tokenSymbol = "ETH"; //TODO: maybe in future different methodology
+  }
+  if (tokenSymbol === "crvUSD") {
+    tokenSymbol = "USDC";
   }
   const price = await redstone.getPrice(tokenSymbol);
   console.log(`Token price ${tokenSymbol} in USD: ${price.value}`);
@@ -145,6 +152,14 @@ async function calculateSlippage(prices, fromCrypto, toCrypto, getOutAmount) {
   return [receivedFirstForSecond, receivedSecondForFirst, results];
 }
 
+async function addAddressToTokesIfMissing(tokenA, tokenB, poolAddress) {
+  if (!tokenA.address || !tokenB.address) {
+    const poolTokens = await safeAsyncCall(() => getPoolTokens(poolAddress));
+    tokenA.address = poolTokens[tokenA.symbol.toLowerCase()];
+    tokenB.address = poolTokens[tokenB.symbol.toLowerCase()];
+  }
+}
+
 async function calculatePoolSlippage(
   DEX,
   poolAddress,
@@ -171,6 +186,8 @@ async function calculatePoolSlippage(
     }
 
     const poolSize = await safeAsyncCall(() => getPoolSize(poolAddress));
+    await addAddressToTokesIfMissing(fromCrypto, toCrypto, poolAddress);
+
     const prices = generatePricesArray();
 
     const [receivedFirstForSecond, receivedSecondForFirst, results] =

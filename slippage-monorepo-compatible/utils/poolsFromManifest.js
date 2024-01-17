@@ -38,7 +38,6 @@ function getTwoTokensFromDetailsUniV2(details) {
   ];
 }
 
-
 async function processUniswapV3Config() {
   const filePath = path.join(
     __dirname,
@@ -120,7 +119,7 @@ async function processSushiSwapConfig() {
 
     Object.keys(config).forEach((key) => {
       const poolData = config[key];
-      const DEX = "SushiSwap"
+      const DEX = "SushiSwap";
 
       Object.values(poolData).forEach((details) => {
         const [tokenA, tokenB] = getTwoTokensFromDetailsUniV2(details);
@@ -147,8 +146,90 @@ async function processUniV2LikeConfig() {
   return poolsInfo;
 }
 
+function transformToJsonLikeString(dataString) {
+  let transformed = dataString.replace(/(\w+):/g, '"$1":');
+  transformed = transformed.replace(/ethereumProvider/g, `"ethereum"`);
+  transformed = transformed.replace(/arbitrumProvider/g, `"arbitrum"`);
+  transformed = transformed.replace(/"multiBlockConfig":\s*[\w_]+,\s*/g, "");
+  transformed = transformed.replace(/,\s*}/g, " }");
+  transformed = transformed.replace(/(\d)e(\d+)/g, (match, base, exponent) => {
+    return exponent;
+  });
+
+  return "{\n" + transformed + "\n}";
+}
+
+async function processCurveConfig() {
+  const filePath = path.join(
+    __dirname,
+    "../../../redstone-monorepo-priv/packages/oracle-node/src/fetchers/curve/curve-fetchers-config.ts"
+  );
+
+  try {
+    const data = await fs.readFile(filePath, { encoding: "utf8" });
+    const startSequence =
+      "export const curveFetchersConfig: Record<string, PoolsConfig> = {";
+    const endSequence = ",\n};";
+
+    const startIndex = data.indexOf(startSequence);
+    const endIndex = data.indexOf(endSequence, startIndex);
+
+    const jsonLikeString = data
+      .substring(startIndex + startSequence.length, endIndex)
+      .trim();
+
+    const transformedString = transformToJsonLikeString(jsonLikeString);
+    const config = JSON.parse(transformedString);
+    const poolsInfo = [];
+
+    const DEX = "Curve";
+    for (const poolName in config) {
+      if (config.hasOwnProperty(poolName)) {
+        const pool = config[poolName];
+        for (const tokenName in pool) {
+          if (pool.hasOwnProperty(tokenName)) {
+            const tokenData = pool[tokenName];
+            const tokenA = {
+              symbol: tokenName,
+              decimals: tokenData.tokenDecimalsMultiplier,
+              index: tokenData.tokenIndex,
+            };
+
+            const tokenB = {
+              symbol: tokenData.pairedToken,
+              decimals: tokenData.pairedTokenDecimalsMultiplier,
+              index: tokenData.pairedTokenIndex,
+            };
+
+            const poolInfo = {
+              DEX: DEX,
+              poolAddress: tokenData.address,
+              functionName: tokenData.functionName,
+              network: tokenData.provider,
+              tokenA: tokenA,
+              tokenB: tokenB,
+            };
+            poolsInfo.push(poolInfo);
+          }
+        }
+      }
+    }
+
+    //TODO: in the future make support for arbitrum pools
+    const filteredPools = poolsInfo.filter(
+      (pool) => pool.network === "ethereum"
+    );
+
+    return filteredPools;
+    // return poolsInfo;
+  } catch (err) {
+    console.error("Error while reading file:", err);
+    throw err;
+  }
+}
+
 // async function main() {
-//   const pools = await processUniV2LikeConfig();
+//   const pools = await processCurveConfig();
 //   console.log(pools);
 // }
 // main();
@@ -156,4 +237,5 @@ async function processUniV2LikeConfig() {
 module.exports = {
   processUniswapV3Config,
   processUniV2LikeConfig,
+  processCurveConfig,
 };

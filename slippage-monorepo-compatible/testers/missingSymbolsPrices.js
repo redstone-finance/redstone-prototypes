@@ -1,4 +1,4 @@
-const { processUniswapV3Config, processUniV2LikeConfig } = require("../utils/poolsFromManifest");
+const { processUniswapV3Config, processUniV2LikeConfig, processCurveConfig } = require("../utils/poolsFromManifest");
 const { getTokenPriceInUSD } = require("../utils/slippage");
 
 const missingTokens = [];
@@ -6,7 +6,8 @@ const foundTokens = [];
 
 async function findMissingPrices() {
 //   const pools = await processUniswapV3Config();
-  const pools = await processUniV2LikeConfig();
+  // const pools = await processUniV2LikeConfig();
+  const pools = await processCurveConfig();
   for (const poolData of pools) {
     pool = poolData;
     tokenA = pool.tokenA;

@@ -2,7 +2,7 @@ const ethers = require("ethers");
 const dotenv = require("dotenv");
 const path = require("path");
 const { processUniV2LikeConfig } = require("../utils/poolsFromManifest");
-const { calculatePoolSlippage, getPoolTokens } = require("../utils/slippage");
+const { calculatePoolSlippage } = require("../utils/slippage");
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
@@ -46,9 +46,6 @@ async function findPoolsSlippages() {
     pool = poolData;
     const routerAddress = routerAddresses[pool.DEX];
     contract = new ethers.Contract(routerAddress, abi, provider);
-    const poolTokens = await getPoolTokens(pool.poolAddress);
-    pool.tokenA.address = poolTokens[pool.tokenA.symbol.toLowerCase()];
-    pool.tokenB.address = poolTokens[pool.tokenB.symbol.toLowerCase()];
     await findPoolSlippage();
   }
 }
