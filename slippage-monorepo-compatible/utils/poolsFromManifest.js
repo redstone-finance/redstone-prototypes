@@ -151,6 +151,10 @@ function transformToJsonLikeString(dataString) {
   transformed = transformed.replace(/ethereumProvider/g, `"ethereum"`);
   transformed = transformed.replace(/arbitrumProvider/g, `"arbitrum"`);
   transformed = transformed.replace(/"multiBlockConfig":\s*[\w_]+,\s*/g, "");
+
+  transformed = transformed.replace(/"\s*(amount|swapAmount)":\s*.*,\s*/g, ""); //Balancer
+  transformed = transformed.replace(/,\s*\]/g, "]"); // Balancer
+
   transformed = transformed.replace(/,\s*}/g, " }");
   transformed = transformed.replace(/(\d)e(\d+)/g, (match, base, exponent) => {
     return exponent;
@@ -228,8 +232,79 @@ async function processCurveConfig() {
   }
 }
 
+async function processBalancerConfig() {
+  const filePath = path.join(
+    __dirname,
+    "../../../redstone-monorepo-priv/packages/oracle-node/src/fetchers/balancer/balancer-ethereum-configs.ts"
+  );
+
+  try {
+    const data = await fs.readFile(filePath, { encoding: "utf8" });
+    const startSequence = "export const balancerEthereumConfigs = {";
+    const endSequence = ",\n};";
+
+    const startIndex = data.indexOf(startSequence);
+    const endIndex = data.indexOf(endSequence, startIndex);
+
+    const jsonLikeString = data
+      .substring(startIndex + startSequence.length, endIndex)
+      .trim();
+
+    const transformedString = transformToJsonLikeString(jsonLikeString);
+
+    const config = JSON.parse(transformedString);
+    const poolsInfo = [];
+
+    const DEX = "Balancer V2";
+
+    for (const poolTokenName in config) {
+      if (config.hasOwnProperty(poolTokenName)) {
+        const pool = config[poolTokenName];
+        for (const tokenName in pool) {
+          if (pool.hasOwnProperty(tokenName)) {
+            const tokenData = pool[tokenName];
+
+            const tokenAIndex = tokenData.swaps[0].assetInIndex;
+            const tokenBIndex = tokenData.swaps[0].assetOutIndex;
+
+            const tokenA = {
+              symbol: tokenName,
+              decimals: tokenData.baseTokenDecimals,
+              address: tokenData.tokenAddresses[tokenAIndex],
+            };
+
+            const tokenBSymbol = tokenData.tokenToFetch
+              ? tokenData.tokenToFetch
+              : poolTokenName;
+
+            const tokenB = {
+              symbol: tokenBSymbol,
+              decimals: tokenData.pairedTokenDecimals,
+              address: tokenData.tokenAddresses[tokenBIndex],
+            };
+
+            const poolInfo = {
+              DEX: DEX,
+              poolId: tokenData.swaps[0].poolId,
+              poolAddress: tokenData.swaps[0].poolId.slice(0, 42), //first 20 bytes
+              tokenA: tokenA,
+              tokenB: tokenB,
+            };
+
+            poolsInfo.push(poolInfo);
+          }
+        }
+      }
+    }
+    return poolsInfo;
+  } catch (err) {
+    console.error("Error while reading file:", err);
+    throw err;
+  }
+}
+
 // async function main() {
-//   const pools = await processCurveConfig();
+//   const pools = await processBalancerConfig();
 //   console.log(pools);
 // }
 // main();
@@ -238,4 +313,5 @@ module.exports = {
   processUniswapV3Config,
   processUniV2LikeConfig,
   processCurveConfig,
+  processBalancerConfig,
 };
