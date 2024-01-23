@@ -256,16 +256,6 @@ async function processStepAndWriteAmountForSlippageCSV(inputCSV, outputCSV) {
     { id: "Slip3%ValueB", title: "Slip3%ValueB" },
   ];
 
-  try {
-    await fs.access(outputFilePath);
-  } catch (error) {
-    const csvWriter = createCsvWriter({
-      path: outputFilePath,
-      header: headers,
-    });
-    await csvWriter.writeRecords([]); // Empty array to create file with headers
-  }
-
   const records = await readCSV(inputFilePath);
   const thresholdsPercentage = [1, 2, 3];
 
@@ -299,11 +289,12 @@ async function processStepAndWriteAmountForSlippageCSV(inputCSV, outputCSV) {
   const csvWriter = createCsvWriter({
     path: outputFilePath,
     header: headers,
-    append: true,
   });
 
   await csvWriter.writeRecords(processedData);
-  console.log(`Processed ${inputCSV} and results has been written to the ${outputCSV} file.`);
+  console.log(
+    `Processed ${inputCSV} and results has been written to the ${outputCSV} file.`
+  );
 }
 
 // processStepAndWriteAmountForSlippageCSV(
