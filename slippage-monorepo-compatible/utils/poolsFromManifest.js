@@ -24,6 +24,14 @@ function getTokenIndexedFromDetailsUniV2(details, index) {
   };
 }
 
+function getTokenIndexedFromDetailsMaverick(details, index) {
+  return {
+    symbol: details[`token${index}Symbol`],
+    decimals: details[`token${index}Decimals`],
+    tokenAIn: index === 0, // tokenAIn is true for symbol0 and false for symbol1
+  };
+}
+
 function getTwoTokensFromDetailsUniV3(details) {
   return [
     getTokenIndexedFromDetailsUniV3(details, 0),
@@ -35,6 +43,13 @@ function getTwoTokensFromDetailsUniV2(details) {
   return [
     getTokenIndexedFromDetailsUniV2(details, 0),
     getTokenIndexedFromDetailsUniV2(details, 1),
+  ];
+}
+
+function getTwoTokensFromDetailsMaverick(details) {
+  return [
+    getTokenIndexedFromDetailsMaverick(details, 0),
+    getTokenIndexedFromDetailsMaverick(details, 1),
   ];
 }
 
@@ -152,10 +167,12 @@ function transformToJsonLikeStringCurve(dataString) {
   transformed = transformed.replace(/arbitrumProvider/g, `"arbitrum"`);
   transformed = transformed.replace(/"multiBlockConfig":\s*[\w_]+,\s*/g, "");
   transformed = transformed.replace(/,\s*}/g, " }");
-  transformed = transformed.replace(/(\d)e(\d+)/g, (match, base, exponent) => {
-    return exponent; //TODO: attention it can ruin addresses
-  });
-
+  transformed = transformed.replace(
+    /("tokenDecimalsMultiplier"|"pairedTokenDecimalsMultiplier"):\s*(\d)e(\d+)/g,
+    (match, property, base, exponent) => {
+      return `${property}: ${exponent}`;
+    }
+  );
   return "{\n" + transformed + "\n}";
 }
 
@@ -163,6 +180,15 @@ function transformToJsonLikeStringBalancer(dataString) {
   let transformed = dataString.replace(/(\w+):/g, '"$1":');
   transformed = transformed.replace(/"\s*(amount|swapAmount)":\s*.*,\s*/g, "");
   transformed = transformed.replace(/,\s*\]/g, "]");
+  transformed = transformed.replace(/,\s*}/g, " }");
+  return "{\n" + transformed + "\n}";
+}
+
+function transformToJsonLikeStringMaverick(dataString) {
+  let transformed = dataString.replace(/(\w+):/g, '"$1":');
+  transformed = transformed.replace(/\/\/.*\n/g, "");
+  transformed = transformed.replace(/ethereumProvider/g, `"ethereum"`);
+  transformed = transformed.replace(/"multiBlockConfig":\s*[\w_]+,\s*/g, "");
   transformed = transformed.replace(/,\s*}/g, " }");
   return "{\n" + transformed + "\n}";
 }
@@ -307,8 +333,49 @@ async function processBalancerConfig() {
   }
 }
 
+async function processMaverickConfig() {
+  const filePath = path.join(
+    __dirname,
+    "../../../redstone-monorepo-priv/packages/oracle-node/src/fetchers/maverick/maverick-fetcher-config.ts"
+  );
+
+  try {
+    const data = await fs.readFile(filePath, { encoding: "utf8" });
+    const startSequence = "export default {";
+    const endSequence = ",\n};";
+
+    const startIndex = data.indexOf(startSequence);
+    const endIndex = data.indexOf(endSequence, startIndex);
+
+    const jsonLikeString = data
+      .substring(startIndex + startSequence.length, endIndex)
+      .trim();
+
+    const transformedString = transformToJsonLikeStringMaverick(jsonLikeString);
+    const config = JSON.parse(transformedString);
+    const poolsInfo = [];
+    const DEX = "Maverick";
+
+    Object.entries(config.tokens).forEach(([key, details]) => {
+      const [tokenA, tokenB] = getTwoTokensFromDetailsMaverick(details);
+      const poolInfo = {
+        DEX: DEX,
+        poolAddress: details.poolAddress,
+        tokenA: tokenA,
+        tokenB: tokenB,
+      };
+      poolsInfo.push(poolInfo);
+    });
+
+    return poolsInfo;
+  } catch (err) {
+    console.error("Error while reading file:", err);
+    throw err;
+  }
+}
+
 // async function main() {
-//   const pools = await processBalancerConfig();
+//   const pools = await processMaverickConfig();
 //   console.log(pools);
 // }
 // main();
@@ -318,4 +385,5 @@ module.exports = {
   processUniV2LikeConfig,
   processCurveConfig,
   processBalancerConfig,
+  processMaverickConfig,
 };

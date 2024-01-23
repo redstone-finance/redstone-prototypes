@@ -1,6 +1,9 @@
 const axios = require("axios");
 const redstone = require("redstone-api");
-const { safeAsyncCall } = require("../utils/error");
+const {
+  safeAsyncCall,
+  safeAsyncCallWithDefaultZero,
+} = require("../utils/error");
 const {
   writePoolSlippageToCSV,
   writeMissingPoolToCSV,
@@ -107,9 +110,13 @@ async function calculateSlip(
     fromCrypto.decimals
   );
 
-  const receivedSecondAmount = await safeAsyncCall(() =>
+  const receivedSecondAmount = await safeAsyncCallWithDefaultZero(() =>
     getOutAmount(fromAmount, fromCrypto, toCrypto)
   );
+
+  // const receivedSecondAmount = await safeAsyncCall(() =>
+  //   getOutAmount(fromAmount, fromCrypto, toCrypto)
+  // );
 
   const expectedSecondAmount = fromAmount * expectedSecondForFirstUnit;
   const differencePercentage = parseFloat(
@@ -185,8 +192,13 @@ async function calculatePoolSlippage(
       return;
     }
 
-    const poolSize = await safeAsyncCall(() => getPoolSize(poolAddress));
-    await addAddressToTokesIfMissing(fromCrypto, toCrypto, poolAddress);
+    let poolSize;
+    if (DEX === "Maverick") {
+      poolSize = 0; //TODO: different way to spot pool size on Maverick
+    } else {
+      poolSize = await safeAsyncCall(() => getPoolSize(poolAddress));
+      await addAddressToTokesIfMissing(fromCrypto, toCrypto, poolAddress);
+    }
 
     const prices = generatePricesArray();
 
@@ -212,7 +224,7 @@ async function calculatePoolSlippage(
       fromCrypto.symbol,
       toCrypto.symbol
     );
-    // console.error(error);
+    console.error(error);
     if (
       !(await checkIfPoolAlreadyExists(
         DEX,

@@ -45,7 +45,6 @@ async function findPoolsSlippages() {
   for (const [index, poolData] of pools.entries()) {
     console.log(`Processing pool ${index + 1}/${pools.length}`);
     pool = poolData;
-    //TODO: why pool.quoterAddress is different then our quoterAddress?
     await findPoolSlippage();
   }
 }

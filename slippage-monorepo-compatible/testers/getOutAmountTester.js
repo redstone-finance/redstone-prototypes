@@ -5,6 +5,7 @@ const {
   processUniswapV3Config,
   processCurveConfig,
   processBalancerConfig,
+  processMaverickConfig,
 } = require("../utils/poolsFromManifest");
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
@@ -118,6 +119,25 @@ const abiBalancer = [
   },
 ];
 
+const MAVERICK_POOL_INFORMATION_ABI = [
+  {
+    name: "calculateSwap",
+    outputs: [{ type: "uint256", name: "returnAmount" }],
+    inputs: [
+      { type: "address", name: "pool" },
+      { type: "uint128", name: "amount" },
+      { type: "bool", name: "tokenAIn" },
+      { type: "bool", name: "exactOutput" },
+      { type: "uint256", name: "sqrtPriceLimit" },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+];
+
+
+const poolInformationAddress = "0xadc6ced7666779ede88e82c95e363450ac59bfd3";
+
 let pool, contract;
 
 async function getOutAmountUniswapV3(fromAmount, fromCrypto, toCrypto) {
@@ -139,6 +159,18 @@ async function getOutAmountCurve(fromAmount, fromCrypto, toCrypto) {
   );
   return ethers.utils.formatUnits(outAmount.toString(), toCrypto.decimals);
 }
+
+async function getOutAmountMaverick(fromAmount, fromCrypto, toCrypto) {
+  const amountOut = await contract.callStatic.calculateSwap(
+    pool.poolAddress,
+    ethers.utils.parseUnits(fromAmount.toString(), fromCrypto.decimals),
+    fromCrypto.tokenAIn, //TODO: true or false
+    false, // False means amount is in, true means amount is out
+    0 // Unlimited slippage
+  );
+  return ethers.utils.formatUnits(amountOut.toString(), toCrypto.decimals);
+}
+
 
 const missedWithV3Quoter = [];
 // const missedWithConfigQuoter = [];
@@ -291,6 +323,43 @@ async function testGetOutAmountBalancerV2() {
   console.log("Missed with Balancer: ", missedBalancer);
 }
 
+const missedMaverick = [];
+async function testGetOutAmountMaverick() {
+  const pools = await processMaverickConfig();
+  for (const poolData of pools) {
+    pool = poolData;
+    const fromAmount = 200; //safe amount is 200 ETH or 20 000 USD
+    const fromCrypto = pool.tokenA;
+    const toCrypto = pool.tokenB;
+    try {
+      contract = new ethers.Contract(
+        poolInformationAddress,
+        MAVERICK_POOL_INFORMATION_ABI,
+        provider
+      );
+      const amountOut = await getOutAmountMaverick(
+        fromAmount,
+        fromCrypto,
+        toCrypto
+      );
+      const amountOut2 = await getOutAmountMaverick(
+        fromAmount,
+        toCrypto,
+        fromCrypto
+      );
+    } catch (error) {
+      missedMaverick.push(pool);
+    }
+  }
+
+  console.log("Missed with Maverick: ", missedMaverick.length);
+  console.log("Total number of pools: ", pools.length);
+
+  console.log("Missed with Maverick: ", missedMaverick);
+}
+
+
 // testGetOutAmountUniswapV3();
 // testGetOutAmountCurve();
-testGetOutAmountBalancerV2();
+// testGetOutAmountBalancerV2();
+testGetOutAmountMaverick();
