@@ -290,7 +290,7 @@ async function processStepAndWriteAmountForSlippageCSV(inputCSV, outputCSV) {
     path: outputFilePath,
     header: headers,
   });
-
+  await csvWriter.writeRecords([]); // Empty array to create file with headers
   await csvWriter.writeRecords(processedData);
   console.log(
     `Processed ${inputCSV} and results has been written to the ${outputCSV} file.`
