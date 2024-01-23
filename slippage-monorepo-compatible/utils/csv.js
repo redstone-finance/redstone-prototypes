@@ -297,6 +297,64 @@ async function processStepAndWriteAmountForSlippageCSV(inputCSV, outputCSV) {
   );
 }
 
+async function filterAndWriteProdTokensCSV(inputCSV) {
+  const inputFile = `../results-csv/${inputCSV}.csv`;
+  const inputFilePath = path.join(currentScriptDirectory, inputFile);
+  const outputFile = `../results-csv/${inputCSV}-Prod.csv`;
+  const outputFilePath = path.join(currentScriptDirectory, outputFile);
+
+  try {
+    await fs.access(inputFilePath);
+  } catch (error) {
+    console.log("Source file does not exist.");
+    return;
+  }
+
+  const prodTokens = [
+    "swETH",
+    "ETHx",
+    "weETH",
+    "osETH",
+    "pxETH",
+    "wstETH",
+    "rETH",
+  ];
+
+  const records = await readCSV(inputFilePath);
+
+  const filteredData = records.filter(
+    (record) =>
+      prodTokens.includes(record.TokenA) ||
+      prodTokens.includes(record.TokenB)
+  );
+
+  const headers = Object.keys(records[0]).map((key) => ({
+    id: key,
+    title: key,
+  }));
+
+  const csvWriter = createCsvWriter({
+    path: outputFilePath,
+    header: headers,
+  });
+  await csvWriter.writeRecords([]); // Empty array to create file with headers
+  await csvWriter.writeRecords(filteredData);
+  console.log(
+    `Filtered ${inputCSV} and results have been written to the ${inputCSV}-Prod file.`
+  );
+}
+
+async function filerMultipleCSVFiles(inputCSVs) {
+  for (let inputCSV of inputCSVs) {
+    await filterAndWriteProdTokensCSV(inputCSV);
+  }
+}
+
+// filerMultipleCSVFiles([
+//   "StepSlippage",
+//   "AmountForSlippage",
+// ]).catch((error) => console.error(error));
+
 // processStepAndWriteAmountForSlippageCSV(
 //   "StepSlippage",
 //   "AmountForSlippage"
