@@ -1,4 +1,5 @@
 const fs = require("fs").promises;
+const { parse } = require("csv-parse");
 const createCsvWriter = require("csv-writer").createObjectCsvWriter;
 const path = require("path");
 
@@ -62,7 +63,7 @@ async function appendPoolSlippageToCSV(data, prices) {
       path: filePath,
       header: headers,
     });
-    csvWriter.writeRecords([]); // Empty array to create file with headers
+    await csvWriter.writeRecords([]); // Empty array to create file with headers
   }
 
   const dataToWrite = {
@@ -89,7 +90,7 @@ async function appendPoolSlippageToCSV(data, prices) {
     append: true,
   });
 
-  csvWriter.writeRecords([dataToWrite]).then(() => {
+  await csvWriter.writeRecords([dataToWrite]).then(() => {
     console.log("Pool Slippage has been added to CSV file.");
   });
 }
@@ -149,7 +150,7 @@ async function writeMissingPoolToCSV(
       path: filePath,
       header: headers,
     });
-    csvWriter.writeRecords([]); // Empty array to create file with headers
+    await csvWriter.writeRecords([]); // Empty array to create file with headers
   }
 
   const csvWriter = createCsvWriter({
@@ -158,7 +159,7 @@ async function writeMissingPoolToCSV(
     append: true,
   });
 
-  csvWriter.writeRecords([dataToWrite]).then(() => {
+  await csvWriter.writeRecords([dataToWrite]).then(() => {
     console.log("Missing Pool Slippage has been added to CSV file.");
   });
 }
@@ -199,6 +200,116 @@ async function checkIfPoolAlreadyExists(
     );
   });
 }
+
+async function readCSV(filePath) {
+  const fileContent = await fs.readFile(filePath);
+  return new Promise((resolve, reject) => {
+    parse(
+      fileContent,
+      { columns: true, skip_empty_lines: true },
+      (err, output) => {
+        if (err) reject(err);
+        else resolve(output);
+      }
+    );
+  });
+}
+
+function findFirstSlippage(record, threshold, tokenSuffix) {
+  for (let key in record) {
+    if (
+      key.endsWith(tokenSuffix) &&
+      Math.abs(parseFloat(record[key])) > threshold
+    ) {
+      return parseInt(key.split("k")[0].split("$")[1]) * 1e3;
+    }
+  }
+  return null;
+}
+
+async function processStepAndWriteAmountForSlippageCSV(inputCSV, outputCSV) {
+  const inputFile = `../results-csv/${inputCSV}.csv`;
+  const inputFilePath = path.join(currentScriptDirectory, inputFile);
+  const outputFile = `../results-csv/${outputCSV}.csv`;
+  const outputFilePath = path.join(currentScriptDirectory, outputFile);
+
+  try {
+    await fs.access(inputFilePath);
+  } catch (error) {
+    console.log("Source file does not exist.");
+    return;
+  }
+
+  const headers = [
+    { id: "DEX", title: "DEX" },
+    { id: "TokenA", title: "TokenA" },
+    { id: "TokenB", title: "TokenB" },
+    { id: "PoolAddress", title: "Pool Address" },
+    { id: "PriceTokenBinA", title: "Price Token B in A" },
+    { id: "PriceTokenAinB", title: "Price Token A in B" },
+    { id: "PoolSize", title: "Pool Size" },
+    { id: "Slip1%ValueA", title: "Slip1%ValueA" },
+    { id: "Slip1%ValueB", title: "Slip1%ValueB" },
+    { id: "Slip2%ValueA", title: "Slip2%ValueA" },
+    { id: "Slip2%ValueB", title: "Slip2%ValueB" },
+    { id: "Slip3%ValueA", title: "Slip3%ValueA" },
+    { id: "Slip3%ValueB", title: "Slip3%ValueB" },
+  ];
+
+  try {
+    await fs.access(outputFilePath);
+  } catch (error) {
+    const csvWriter = createCsvWriter({
+      path: outputFilePath,
+      header: headers,
+    });
+    await csvWriter.writeRecords([]); // Empty array to create file with headers
+  }
+
+  const records = await readCSV(inputFilePath);
+  const thresholdsPercentage = [1, 2, 3];
+
+  const processedData = records.map((record) => {
+    let result = {
+      DEX: record.DEX,
+      TokenA: record.TokenA,
+      TokenB: record.TokenB,
+      PoolAddress: record["Pool Address"],
+      PriceTokenBinA: record["Price Token B in A"],
+      PriceTokenAinB: record["Price Token A in B"],
+      PoolSize: record["Pool Size"],
+    };
+
+    thresholdsPercentage.forEach((thresholdPercentage) => {
+      result[`Slip${thresholdPercentage}%ValueA`] = findFirstSlippage(
+        record,
+        thresholdPercentage,
+        "AtoB"
+      );
+      result[`Slip${thresholdPercentage}%ValueB`] = findFirstSlippage(
+        record,
+        thresholdPercentage,
+        "BtoA"
+      );
+    });
+
+    return result;
+  });
+
+  const csvWriter = createCsvWriter({
+    path: outputFilePath,
+    header: headers,
+    append: true,
+  });
+
+  await csvWriter.writeRecords(processedData);
+  console.log(`Processed ${inputCSV} and results has been written to the ${outputCSV} file.`);
+}
+
+// processStepAndWriteAmountForSlippageCSV(
+//   "StepSlippage",
+//   "AmountForSlippage"
+// ).catch((error) => console.error(error));
 
 module.exports = {
   writePoolSlippageToCSV,
