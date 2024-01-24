@@ -10,7 +10,7 @@ const {
   checkIfPoolAlreadyExists,
 } = require("../utils/csv");
 
-async function getPoolSize(poolAddress, getTokenAddress = false) {
+async function getPoolSize(poolAddress) {
   const network = "eth";
   const apiUrl = `https://api.geckoterminal.com/api/v2/networks/${network}/pools/${poolAddress}`;
   const response = await axios.get(apiUrl);

@@ -364,4 +364,5 @@ module.exports = {
   writePoolSlippageToCSV,
   writeMissingPoolToCSV,
   checkIfPoolAlreadyExists,
+  readCSV,
 };
