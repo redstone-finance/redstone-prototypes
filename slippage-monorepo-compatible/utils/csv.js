@@ -311,7 +311,7 @@ async function filterAndWriteProdTokensCSV(inputCSV) {
   }
 
   const prodTokens = [
-    "swETH",
+    "SWETH",
     "ETHx",
     "weETH",
     "osETH",

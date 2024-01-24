@@ -42,7 +42,7 @@ function getPriceAndIsTokenA(token, record) {
   //TODO: different pricing methodology?
   const pairedTokenPrice = record.pairedTokenPrice;
   // const pairedToken = isTokenA ? record.TokenB : record.TokenA;
-  // const pairedTokenPrice = pairedToken.includes("ETH") ? 2222 : 1;
+  // const pairedTokenPrice = pairedToken.includes("ETH") ? 2209 : 1;
   const price = parseFloat(ratio) * pairedTokenPrice;
   return { price, isTokenA };
 }
@@ -257,7 +257,7 @@ async function processTokenDataAndWriteCSV(token) {
 
 async function processAllTokens() {
   const prodTokens = [
-    "swETH",
+    "SWETH",
     "ETHx",
     "weETH",
     "osETH",
