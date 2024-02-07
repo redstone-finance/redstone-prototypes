@@ -165,6 +165,7 @@ function transformToJsonLikeStringCurve(dataString) {
   let transformed = dataString.replace(/(\w+):/g, '"$1":');
   transformed = transformed.replace(/ethereumProvider/g, `"ethereum"`);
   transformed = transformed.replace(/arbitrumProvider/g, `"arbitrum"`);
+  transformed = transformed.replace(/"abi":\s*[\w_]+,\s*/g, "");
   transformed = transformed.replace(/"multiBlockConfig":\s*[\w_]+,\s*/g, "");
   transformed = transformed.replace(/,\s*}/g, " }");
   transformed = transformed.replace(
@@ -215,7 +216,6 @@ async function processCurveConfig() {
     const transformedString = transformToJsonLikeStringCurve(jsonLikeString);
     const config = JSON.parse(transformedString);
     const poolsInfo = [];
-
     const DEX = "Curve";
     for (const poolName in config) {
       if (config.hasOwnProperty(poolName)) {
@@ -284,9 +284,7 @@ async function processBalancerConfig() {
 
     const config = JSON.parse(transformedString);
     const poolsInfo = [];
-
     const DEX = "Balancer V2";
-
     for (const poolTokenName in config) {
       if (config.hasOwnProperty(poolTokenName)) {
         const pool = config[poolTokenName];
