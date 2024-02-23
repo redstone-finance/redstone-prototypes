@@ -11,13 +11,12 @@ This project is designed to analyze slippage on various decentralized exchanges 
 
 ### Setup
 
-1. Clone the repository and navigate into the `redstone-prototypes` directory:
+1. Clone the repository and navigate into relevant folder in the `redstone-prototypes` directory:
 
 ```bash
-cd home/
-git clone [URL_TO_REDSTONE_MONOREPO_PRIV]
-git clone [URL_TO_REDSTONE_PROTOTYPES]
-cd redstone-prototypes/
+git clone https://github.com/redstone-finance/redstone-monorepo-priv.git
+git clone https://github.com/damiad/redstone-prototypes.git
+cd redstone-prototypes/slippage-monorepo-compatible
 ```
 
 2. Install the required npm packages:
@@ -73,4 +72,4 @@ Contributions to improve the tool are welcome. Please consider submitting a pull
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](../LICENSE) file for details.
