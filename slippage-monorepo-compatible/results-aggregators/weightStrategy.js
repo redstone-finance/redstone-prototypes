@@ -1,9 +1,12 @@
 const fs = require("fs").promises;
-const { parse } = require("csv-parse");
 const createCsvWriter = require("csv-writer").createObjectCsvWriter;
+const dotenv = require("dotenv");
 const path = require("path");
-const { readCSV } = require("../utils/csv");
+const { readCSV, ensureDirectoryExists } = require("../utils/csv");
 const { getTokenPriceInUSD } = require("../utils/slippage");
+
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
+const RESULTS_VERSION = process.env.RESULTS_VERSION;
 
 const currentScriptPath = __filename;
 const currentScriptDirectory = path.dirname(currentScriptPath);
@@ -161,12 +164,14 @@ function findWeightsAndMedianForValue(token, records, value, direction) {
 async function processTokenDataAndWriteCSV(token) {
   const inputFile1Name = "AmountForSlippage-Prod";
   const inputFile2Name = "StepSlippage-Prod";
-  const inputFile1 = `../results-csv/${inputFile1Name}.csv`;
+  const inputFile1 = `../results-csv-${RESULTS_VERSION}/${inputFile1Name}.csv`;
   const inputFile1Path = path.join(currentScriptDirectory, inputFile1);
-  const inputFile2 = `../results-csv/${inputFile2Name}.csv`;
+  const inputFile2 = `../results-csv-${RESULTS_VERSION}/${inputFile2Name}.csv`;
   const inputFile2Path = path.join(currentScriptDirectory, inputFile2);
-  const outputFile = `../results-csv/results-per-token/${token}.csv`;
+  const outputFile = `../results-csv-${RESULTS_VERSION}/results-per-token/${token}.csv`;
   const outputFilePath = path.join(currentScriptDirectory, outputFile);
+
+  await ensureDirectoryExists(`../results-csv-${RESULTS_VERSION}/results-per-token`);
 
   try {
     await fs.access(inputFile1Path);
