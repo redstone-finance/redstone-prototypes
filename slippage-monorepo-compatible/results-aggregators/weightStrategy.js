@@ -171,7 +171,9 @@ async function processTokenDataAndWriteCSV(token) {
   const outputFile = `../results-csv-${RESULTS_VERSION}/results-per-token/${token}.csv`;
   const outputFilePath = path.join(currentScriptDirectory, outputFile);
 
-  await ensureDirectoryExists(`../results-csv-${RESULTS_VERSION}/results-per-token`);
+  await ensureDirectoryExists(
+    path.join(__dirname, `../results-csv-${RESULTS_VERSION}/results-per-token`)
+  );
 
   try {
     await fs.access(inputFile1Path);
@@ -276,5 +278,6 @@ async function processAllTokens() {
   await Promise.all(promises);
 }
 
-// processTokenDataAndWriteCSV("weETH");
-processAllTokens();
+// processAllTokens();
+
+module.exports = processAllTokens;

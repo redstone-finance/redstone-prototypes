@@ -161,6 +161,8 @@ async function findPoolsSlippages() {
   }
 }
 
-findPoolsSlippages().catch((err) => {
-  console.error("Error occurred:", err);
-});
+// findPoolsSlippages().catch((err) => {
+//   console.error("Error occurred:", err);
+// });
+
+module.exports = findPoolsSlippages;

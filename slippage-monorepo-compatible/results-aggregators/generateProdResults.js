@@ -145,11 +145,17 @@ async function filerMultipleCSVFiles(inputCSVs) {
 }
 
 async function main() {
-  await filerMultipleCSVFiles(["StepSlippage", "AmountForSlippage"]);
-  await processStepAndWriteAmountForSlippageCSV(
-    "StepSlippage",
-    "AmountForSlippage"
-  );
+  try {
+    await processStepAndWriteAmountForSlippageCSV(
+      "StepSlippage",
+      "AmountForSlippage"
+    );
+    await filerMultipleCSVFiles(["StepSlippage", "AmountForSlippage"]);
+  } catch (error) {
+    console.error(error);
+  }
 }
 
-main().catch((error) => console.error(error));
+// main();
+
+module.exports = main;

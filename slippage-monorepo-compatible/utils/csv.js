@@ -47,7 +47,9 @@ function generateDataObject(
 }
 
 async function appendPoolSlippageToCSV(data, prices) {
-  await ensureDirectoryExists(`../results-csv-${RESULTS_VERSION}`);
+  await ensureDirectoryExists(
+    path.join(__dirname, `../results-csv-${RESULTS_VERSION}`)
+  );
 
   const file = `../results-csv-${RESULTS_VERSION}/StepSlippage.csv`;
   const filePath = path.join(currentScriptDirectory, file);
@@ -140,7 +142,9 @@ async function writeMissingPoolToCSV(
   cryptoASymbol,
   cryptoBSymbol
 ) {
-  await ensureDirectoryExists(`../results-csv-${RESULTS_VERSION}`);
+  await ensureDirectoryExists(
+    path.join(__dirname, `../results-csv-${RESULTS_VERSION}`)
+  );
   const file = `../results-csv-${RESULTS_VERSION}/StepSlippageMissingPools.csv`;
   const filePath = path.join(currentScriptDirectory, file);
 
