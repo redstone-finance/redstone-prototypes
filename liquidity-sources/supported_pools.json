@@ -1,0 +1,189 @@
+{
+  "ETHx": [
+    {
+      "address": "0x4cbde5c4b4b53ebe4af4adb85404725985406163",
+      "liquidity": 33022425
+    },
+    {
+      "address": "0x14756a5ed229265f86990e749285bdd39fe0334f",
+      "liquidity": 28270990
+    },
+    {
+      "address": "0x7761b6e0daa04e70637d81f1da7d186c205c2ade",
+      "liquidity": 6806394
+    },
+    {
+      "address": "0x59ab5a5b5d617e478a2479b0cad80da7e2831492",
+      "liquidity": 6081971
+    },
+    {
+      "address": "0x64939a882c7d1b096241678b7a3a57ed19445485",
+      "liquidity": 488215
+    },
+    {
+      "address": "0x1b9669b12959ad51b01fabcf01eabdfadb82f578",
+      "liquidity": 349965
+    },
+    {
+      "address": "0x034e2d995b39a88ab9a532a9bf0deddac2c576ea",
+      "liquidity": 69847
+    }
+  ],
+  "osETH": [
+    {
+      "address": "0xdacf5fa19b1f720111609043ac67a9818262850c",
+      "liquidity": 65889535
+    },
+    {
+      "address": "0xe080027bd47353b5d1639772b4a75e9ed3658a0d",
+      "liquidity": 18994810
+    },
+    {
+      "address": "0xc2a6798447bb70e5abcf1b0d6aeec90bc14fca55",
+      "liquidity": 734549
+    }
+  ],
+  "swETH": [
+    {
+      "address": "0xae8535c23afedda9304b03c68a3563b75fc8f92b",
+      "liquidity": 33088228
+    },
+    {
+      "address": "0x02d928e68d8f10c0358566152677db51e1e2dc8cTEST",
+      "liquidity": 7435532
+    },
+    {
+      "address": "0x30ea22c879628514f1494d4bbfef79d21a6b49a2",
+      "liquidity": 3869516
+    },
+    {
+      "address": "0xe7e2c68d3b13d905bbb636709cf4dfd21076b9d2",
+      "liquidity": 524164
+    },
+    {
+      "address": "0x6db0f81db2c3b2a85a802d511577d8522d0d8c14",
+      "liquidity": 523350
+    },
+    {
+      "address": "0x2022d9af896ecf0f1f5b48cddab9e74b5aabcf00",
+      "liquidity": 107725
+    },
+    {
+      "address": "0x00e8d9811c8fee0d8dedbe4891fafda493d6ac66",
+      "liquidity": 82390
+    }
+  ],
+  "pxETH": [
+    {
+      "address": "0xe2ed1dac3a9547bc6057e32bf8133b5268d7d987",
+      "liquidity": 5543297
+    },
+    {
+      "address": "0xb06bfbd7b50f80c8d9da57fc4cf5cbd5b3e2f148",
+      "liquidity": 4410531
+    },
+    {
+      "address": "0x6951bdc4734b9f7f3e1b74afebc670c736a0edb6",
+      "liquidity": 2517371
+    },
+    {
+      "address": "0x02edd21f1db8eb146be60998e9801691e725f119",
+      "liquidity": 1883374
+    },
+    {
+      "address": "0x71db3764d6841d8b01dc27c0fd4a66a8a34b2be0",
+      "liquidity": 1802620
+    },
+    {
+      "address": "0x7f20eea5bc667f4601e35af15868f3bc6e447050",
+      "liquidity": 1708509
+    },
+    {
+      "address": "0x3733493ec5d2c181dcd7c54ed100641c0f07bb0e",
+      "liquidity": 794107
+    },
+    {
+      "address": "0x3c91eaeac42dfaead5f356167c52837e443b9f94",
+      "liquidity": 522527
+    },
+    {
+      "address": "0xaec7db1be1be14af32d00bbf31487a03cb6925ed",
+      "liquidity": 395419
+    },
+    {
+      "address": "0x476d2f95d9144aaae7f71cf2ee36baf7fd47af6f",
+      "liquidity": 99461
+    }
+  ],
+  "STONE": [],
+  "weETH": [
+    {
+      "address": "0x848a5564158d84b8a8fb68ab5d004fae11619a54",
+      "liquidity": 101629202
+    },
+    {
+      "address": "0x05ff47afada98a98982113758878f9a8b9fdda0a",
+      "liquidity": 11847772
+    },
+    {
+      "address": "0x278cfb6f06b1efc09d34fc7127d6060c61d629db",
+      "liquidity": 7459122
+    },
+    {
+      "address": "0x13947303f63b363876868d070f14dc865c36463b",
+      "liquidity": 2535577
+    },
+    {
+      "address": "0x7a415b19932c0105c82fdb6b720bb01b0cc2cae3",
+      "liquidity": 626494
+    },
+    {
+      "address": "0xb9debddf1d894c79d2b2d09f819ff9b856fca552",
+      "liquidity": 150246
+    }
+  ],
+  "rsETH": [
+    {
+      "address": "0x7761b6e0daa04e70637d81f1da7d186c205c2ade",
+      "liquidity": 6801780
+    },
+    {
+      "address": "0x3772ba91b46f456ae487cb0974040c861c045810",
+      "liquidity": 4535400
+    },
+    {
+      "address": "0x059615ebf32c946aaab3d44491f78e4f8e97e1d3",
+      "liquidity": 2943940
+    },
+    {
+      "address": "0xcb9a5551090c3c56fd1647c2849c315e88c0c5f3",
+      "liquidity": 639803
+    },
+    {
+      "address": "0x64939a882c7d1b096241678b7a3a57ed19445485",
+      "liquidity": 488211
+    },
+    {
+      "address": "0xff42a9af956617e4c3532ef2fc7567465efe4909",
+      "liquidity": 236417
+    }
+  ],
+  "ezETH": [
+    {
+      "address": "0x848a5564158d84b8a8fb68ab5d004fae11619a54",
+      "liquidity": 101629202
+    },
+    {
+      "address": "0x596192bb6e41802428ac943d2f1476c1af25cc0e",
+      "liquidity": 62525151
+    },
+    {
+      "address": "0x85de3add465a219ee25e04d22c39ab027cf5c12e",
+      "liquidity": 3487799
+    },
+    {
+      "address": "0xbe80225f09645f172b079394312220637c440a63",
+      "liquidity": 894245
+    }
+  ]
+}
