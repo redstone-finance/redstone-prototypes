@@ -1,0 +1,24 @@
+name: Find New Sources
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  find-new-sources:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v1
+      with:
+        node-version: '14'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Run find-new-sources.js
+      run: node find-new-sources.js
