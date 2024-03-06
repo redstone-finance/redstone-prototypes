@@ -8,5 +8,10 @@
     "name": "swell",
     "address": "0x68ba9602B2AeE30847412109D2eE89063bf08Ec2",
     "network": "ethereum"
+  },
+  {
+    "name": "chainlink",
+    "address": "TODO",
+    "network": "ethereum"
   }
 ]

@@ -12,7 +12,7 @@ const blockchainExplorerMap = {
   ethereum: {
     explorer: "etherscan.io",
     apiKey: ETHERSCAN_API_KEY,
-    implicitGasPrice: 0,
+    implicitGasPrice: false,
   },
   arbitrum: {
     explorer: "arbiscan.io",
@@ -49,6 +49,15 @@ function prepareDates(timestamp) {
   firstDay = firstDate.getDate();
 }
 
+async function getImplicitGasPrice(txCostUSD, network) {
+  if (txCostUSD) {
+    const ethPrice = (await redstone.getPrice("ETH")).value;
+    return (1e18 * txCostUSD) / ethPrice;
+  } else {
+    return blockchainExplorerMap[network].implicitGasPrice;
+  }
+}
+
 async function cumulativeGasCost(contractName) {
   const contract = contracts.find((c) => c.name === contractName);
   if (!contract) {
@@ -56,11 +65,9 @@ async function cumulativeGasCost(contractName) {
     return;
   }
   const { address, network } = contract;
-  const {
-    explorer: blockchainExplorer,
-    apiKey: API_KEY,
-    implicitGasPrice,
-  } = blockchainExplorerMap[network];
+  const implicitGasPrice = await getImplicitGasPrice(txCostUSD, network);
+  const { explorer: blockchainExplorer, apiKey: API_KEY } =
+    blockchainExplorerMap[network];
   const apiUrl = `https://api.${blockchainExplorer}/api?module=account&action=txlist&address=${address}&apikey=${API_KEY}`;
 
   try {
@@ -221,4 +228,5 @@ function displayGasPerMonth(transactionsByMonth) {
 
 // Example usage: node calculateGasCosts.js swell or npm start swell
 const contractName = process.argv[2];
+const txCostUSD = process.argv[3]; // Optional argument for the cost of a single transaction in USD
 cumulativeGasCost(contractName);
