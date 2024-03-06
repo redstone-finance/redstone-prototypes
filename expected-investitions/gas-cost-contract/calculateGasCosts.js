@@ -49,15 +49,6 @@ function prepareDates(timestamp) {
   firstDay = firstDate.getDate();
 }
 
-async function getImplicitGasPrice(txCostUSD, network) {
-  if (txCostUSD) {
-    const ethPrice = (await redstone.getPrice("ETH")).value;
-    return (1e18 * txCostUSD) / ethPrice;
-  } else {
-    return blockchainExplorerMap[network].implicitGasPrice;
-  }
-}
-
 async function cumulativeGasCost(contractName) {
   const contract = contracts.find((c) => c.name === contractName);
   if (!contract) {
@@ -65,9 +56,11 @@ async function cumulativeGasCost(contractName) {
     return;
   }
   const { address, network } = contract;
-  const implicitGasPrice = await getImplicitGasPrice(txCostUSD, network);
-  const { explorer: blockchainExplorer, apiKey: API_KEY } =
-    blockchainExplorerMap[network];
+  const {
+    explorer: blockchainExplorer,
+    apiKey: API_KEY,
+    implicitGasPrice,
+  } = blockchainExplorerMap[network];
   const apiUrl = `https://api.${blockchainExplorer}/api?module=account&action=txlist&address=${address}&apikey=${API_KEY}`;
 
   try {
@@ -198,6 +191,14 @@ function displayCumulativeGasCosts(
     cumulativeGasCostUSD,
     "USD"
   );
+  if (txCostUSD) {
+    console.log(`Cost of a single transaction:`, Number(txCostUSD), "USD");
+    console.log(
+      `Assuming const txCostUSD: Total cost of transactions:`,
+      Number((txCostUSD * numberOfTransactions).toFixed(2)),
+      "USD"
+    );
+  }
   console.log("--------------------");
 }
 
@@ -222,6 +223,16 @@ function displayGasPerMonth(transactionsByMonth) {
       cumulativeGasCostUSD,
       "USD"
     );
+    if (txCostUSD) {
+      console.log(
+        `Assuming const txCostUSD: Monthly cost of transactions:`,
+        Number((txCostUSD * transactions.length).toFixed(2)),
+        "USD,",
+        `Average cost per day:`,
+        Number((txCostUSD * averageTransactionsPerDay).toFixed(2)),
+        "USD"
+      );
+    }
     console.log("--------------------");
   }
 }

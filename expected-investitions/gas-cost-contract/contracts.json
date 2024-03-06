@@ -10,8 +10,13 @@
     "network": "ethereum"
   },
   {
-    "name": "chainlink",
-    "address": "TODO",
+    "name": "chainlink_1INCH/ETH",
+    "address": "0xb2F68c82479928669B0487D1dAeD6Ef47b63411e",
+    "network": "ethereum"
+  },
+  {
+    "name": "chainlink_AAVE/USD",
+    "address": "0x8116B273cD75d79C382aFacc706659DEd5E0a59d",
     "network": "ethereum"
   }
 ]
