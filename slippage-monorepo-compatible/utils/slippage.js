@@ -10,6 +10,8 @@ const {
   checkIfPoolAlreadyExists,
 } = require("../utils/csv");
 
+const amountToCheckRatio = 100;
+
 async function getPoolSize(poolAddress) {
   const network = "eth";
   const apiUrl = `https://api.geckoterminal.com/api/v2/networks/${network}/pools/${poolAddress}`;
@@ -67,7 +69,7 @@ const generatePricesArray = () => {
 };
 
 async function getPricing(fromCrypto, toCrypto, getOutAmount) {
-  const amountInUSD = 1000;
+  const amountInUSD = amountToCheckRatio;
   const firstPriceInUSD = await safeAsyncCall(() =>
     getTokenPriceInUSD(fromCrypto.symbol)
   );
@@ -121,7 +123,7 @@ async function calculateSlip(
   const expectedSecondAmount = fromAmount * expectedSecondForFirstUnit;
   const differencePercentage = parseFloat(
     ((receivedSecondAmount - expectedSecondAmount) / expectedSecondAmount) * 100
-  ).toFixed(2);
+  ).toFixed(6);
 
   return differencePercentage;
 }
@@ -200,7 +202,7 @@ async function calculatePoolSlippage(
       await addAddressToTokesIfMissing(fromCrypto, toCrypto, poolAddress);
     }
 
-    const prices = generatePricesArray();
+    const prices = generatePricesArray(); //Change to check single slippage: [10000];
 
     const [receivedFirstForSecond, receivedSecondForFirst, results] =
       await calculateSlippage(prices, fromCrypto, toCrypto, getOutAmount);

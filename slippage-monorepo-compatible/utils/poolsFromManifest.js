@@ -163,8 +163,14 @@ async function processUniV2LikeConfig() {
 
 function transformToJsonLikeStringCurve(dataString) {
   let transformed = dataString.replace(/(\w+):/g, '"$1":');
-  transformed = transformed.replace(/ethereumProvider/g, `"ethereum"`);
-  transformed = transformed.replace(/arbitrumProvider/g, `"arbitrum"`);
+  transformed = transformed.replace(
+    /ChainConfigs.ethereum.chainId/g,
+    `"ethereum"`
+  );
+  transformed = transformed.replace(
+    /ChainConfigs.arbitrumOne.chainId/g,
+    `"arbitrum"`
+  );
   transformed = transformed.replace(/"abi":\s*[\w_]+,\s*/g, "");
   transformed = transformed.replace(/"multiBlockConfig":\s*[\w_]+,\s*/g, "");
   transformed = transformed.replace(/,\s*}/g, " }");
@@ -212,7 +218,6 @@ async function processCurveConfig() {
     const jsonLikeString = data
       .substring(startIndex + startSequence.length, endIndex)
       .trim();
-
     const transformedString = transformToJsonLikeStringCurve(jsonLikeString);
     const config = JSON.parse(transformedString);
     const poolsInfo = [];
@@ -239,7 +244,7 @@ async function processCurveConfig() {
               DEX: DEX,
               poolAddress: tokenData.address,
               functionName: tokenData.functionName,
-              network: tokenData.provider,
+              network: tokenData.chainId,
               tokenA: tokenA,
               tokenB: tokenB,
             };

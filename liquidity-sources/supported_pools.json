@@ -23,10 +23,6 @@
     {
       "address": "0x1b9669b12959ad51b01fabcf01eabdfadb82f578",
       "liquidity": 349965
-    },
-    {
-      "address": "0x034e2d995b39a88ab9a532a9bf0deddac2c576ea",
-      "liquidity": 69847
     }
   ],
   "osETH": [
@@ -67,10 +63,6 @@
     {
       "address": "0x2022d9af896ecf0f1f5b48cddab9e74b5aabcf00",
       "liquidity": 107725
-    },
-    {
-      "address": "0x00e8d9811c8fee0d8dedbe4891fafda493d6ac66",
-      "liquidity": 82390
     }
   ],
   "pxETH": [
@@ -109,10 +101,6 @@
     {
       "address": "0xaec7db1be1be14af32d00bbf31487a03cb6925ed",
       "liquidity": 395419
-    },
-    {
-      "address": "0x476d2f95d9144aaae7f71cf2ee36baf7fd47af6f",
-      "liquidity": 99461
     }
   ],
   "STONE": [],
