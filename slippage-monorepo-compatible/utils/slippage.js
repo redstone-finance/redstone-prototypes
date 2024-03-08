@@ -202,7 +202,7 @@ async function calculatePoolSlippage(
       await addAddressToTokesIfMissing(fromCrypto, toCrypto, poolAddress);
     }
 
-    const prices = generatePricesArray(); //Change to check single slippage: [10000];
+    const prices = [10000];// generatePricesArray(); //Change to check single slippage: [10000];
 
     const [receivedFirstForSecond, receivedSecondForFirst, results] =
       await calculateSlippage(prices, fromCrypto, toCrypto, getOutAmount);
