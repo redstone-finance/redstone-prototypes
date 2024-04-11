@@ -1,0 +1,12 @@
+{
+  "name": "dex-transaction-tester",
+  "version": "1.0.0",
+  "description": "Test out amount on dexes",
+  "author": "https://github.com/damiad",
+  "license": "MIT",
+  "dependencies": {
+    "decimal.js": "^10.4.3",
+    "dotenv": "^16.3.1",
+    "ethers": "^5.7.2"
+  }
+}
