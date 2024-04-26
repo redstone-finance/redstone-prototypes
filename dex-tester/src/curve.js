@@ -42,4 +42,4 @@ const pool = {
 const contract = new ethers.Contract(pool.poolAddress, abiV2, provider);
 
 const fromAmount = 1;
-// getOutAmount(fromAmount, pool.tokenA, pool.tokenB).then(console.log);
+getOutAmount(fromAmount, pool.tokenA, pool.tokenB).then(console.log);

@@ -2,6 +2,7 @@ from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS
 import os, sys, time
 from dotenv import load_dotenv
+import csv
 
 load_dotenv()
 
@@ -29,16 +30,47 @@ result = query_api.query(org=org, query=flux_query)
 end_time = time.time()
 execution_time = end_time - start_time
 
+times = []
+values = []
+
 for table in result:
     for record in table.records:
+        times.append(record.values["_time"])
+        values.append(record.values["_value"])
         # if record.values["_field"] == "value":
         #     continue
         # print (record.values)
-        for key in record.values.keys():
-            print(f"{key}: {record.values[key]}")
-        print(f"-------------------")
+        # for key in record.values.keys():
+        #     print(f"{key}: {record.values[key]}")
+        #     if key == "_value":
+        #         print(f"{key}: {record.values[key]}")
+        # print(f"-------------------")
         # break
     # break
+
+# print("Times:", times)
+# print("Values:", values)
+
+file_path = "ezETHbase.csv"
+with open(file_path, mode='w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(["Time", "Value"])
+    for i in range(len(times)):
+        writer.writerow([times[i], values[i]])
+
+avg_values = []
+for i in range(len(values)):
+    start_idx = max(0, i - 60*6)
+    avg_value = sum(values[start_idx:i + 1]) / (i - start_idx + 1)
+    avg_values.append(avg_value)
+
+file_path = "ezETHtwap.csv"
+with open(file_path, mode='w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(["Time", "Value"])
+    for i in range(len(times)):
+        writer.writerow([times[i], avg_values[i]])
+
 
 client.close()
 print(f"Query execution time: {execution_time:.2f} seconds")
