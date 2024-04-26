@@ -59,9 +59,9 @@ for twap in twaps:
         avg_value = sum(values[start_idx:i + 1]) / (i - start_idx + 1)
         avg_values.append(avg_value)
 
-    file_path = f"ezETHtwap{int(twap/6)}.csv"
+    file_path = f"ezETH_ETHtwap{int(twap/6)}.csv"
     if(twap == 0):
-        file_path = "ezETHbase.csv"
+        file_path = "ezETH_ETHbase.csv"
     with open(file_path, mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(["Time", "Value"])
