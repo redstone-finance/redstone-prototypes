@@ -51,26 +51,22 @@ for table in result:
 # print("Times:", times)
 # print("Values:", values)
 
-file_path = "ezETHbase.csv"
-with open(file_path, mode='w', newline='') as file:
-    writer = csv.writer(file)
-    writer.writerow(["Time", "Value"])
-    for i in range(len(times)):
-        writer.writerow([times[i], values[i]])
+twaps = [0, 30*6, 60*6, 120*6]
+for twap in twaps:
+    avg_values = []
+    for i in range(len(values)):
+        start_idx = max(0, i - twap)
+        avg_value = sum(values[start_idx:i + 1]) / (i - start_idx + 1)
+        avg_values.append(avg_value)
 
-avg_values = []
-for i in range(len(values)):
-    start_idx = max(0, i - 60*6)
-    avg_value = sum(values[start_idx:i + 1]) / (i - start_idx + 1)
-    avg_values.append(avg_value)
-
-file_path = "ezETHtwap.csv"
-with open(file_path, mode='w', newline='') as file:
-    writer = csv.writer(file)
-    writer.writerow(["Time", "Value"])
-    for i in range(len(times)):
-        writer.writerow([times[i], avg_values[i]])
-
+    file_path = f"ezETHtwap{int(twap/6)}.csv"
+    if(twap == 0):
+        file_path = "ezETHbase.csv"
+    with open(file_path, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["Time", "Value"])
+        for i in range(len(times)):
+            writer.writerow([times[i], avg_values[i]])
 
 client.close()
 print(f"Query execution time: {execution_time:.2f} seconds")
