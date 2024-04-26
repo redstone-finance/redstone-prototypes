@@ -4,9 +4,11 @@ const path = require("path");
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
-const provider = new ethers.providers.JsonRpcProvider(
-  `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`
-);
+// const provider = new ethers.providers.JsonRpcProvider(
+//   `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`
+// );
+const providerUrl = "https://eth.llamarpc.com";
+const provider = new ethers.providers.JsonRpcProvider(providerUrl);
 
 const abi = [
   "function get_dy(int128 i, int128 j, uint256 dx) external view returns (uint256)",

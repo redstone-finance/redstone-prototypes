@@ -18,7 +18,7 @@ for file in files:
     plt.figure(figsize=(30, 6))
     plt.plot(times, values, marker='o', linestyle='-')
     plt.xlabel('Time')
-    plt.ylabel('Value USD')
+    plt.ylabel('Value')
     plt.title(file[:-4])
     plt.xticks(rotation=45)
     plt.grid(True)

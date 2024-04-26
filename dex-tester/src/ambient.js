@@ -1,6 +1,7 @@
 const ethers = require("ethers");
 const dotenv = require("dotenv");
 const path = require("path");
+const Decimal = require("decimal.js");
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
@@ -11,8 +12,8 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 //     "https://blastl2-mainnet.public.blastapi.io",
 //     "https://blast.blockpi.network/v1/rpc/public",
 //   ],
-const providerUrl = "https://blast.blockpi.network/v1/rpc/public";
-const provider = new ethers.providers.Web3Provider(providerUrl);
+const providerUrl = "https://rpc.blast.io";
+const provider = new ethers.providers.JsonRpcProvider(providerUrl);
 // const provider = new ethers.providers.JsonRpcProvider(`https://blast.blockpi.network/v1/rpc/public`);
 
 const DEFAULT_POOL_IDX = 420;
@@ -24,8 +25,25 @@ const DEFAULT_POOL_IDX = 420;
 //     override: ContractCallOverrides
 //   ) => Promise<BigNumberish>;
 
+// const abi = [
+//   "function queryPrice(string base, string quote, uint256 poolIdx) external view returns (uint128)",
+// ];
+
+const bignumberishToDecimal = (value) =>
+  new Decimal(ethers.BigNumber.from(value).toHexString());
+
 const abi = [
-  "function queryPrice(string base, string quote, uint256 poolIdx) external view returns (uint256)",
+  {
+    inputs: [
+      { internalType: "address", name: "base", type: "address" },
+      { internalType: "address", name: "quote", type: "address" },
+      { internalType: "uint256", name: "poolIdx", type: "uint256" },
+    ],
+    name: "queryPrice",
+    outputs: [{ internalType: "uint128", name: "", type: "uint128" }],
+    stateMutability: "view",
+    type: "function",
+  },
 ];
 
 const AMBIENT_QUERY_CONTRACT_ADDRESS =
@@ -49,21 +67,21 @@ const poolsConfig = {
 function getPoolTokens(assetId) {
   const { token0, token1 } = poolsConfig[assetId];
   const isBaseToken0 = token0.symbol === assetId;
-  // 0 is the index of token with smaller addresses
-  const isToken0AddressSmaller =
-    token0.address.toLowerCase() < token1.address.toLowerCase();
+  const isBaseAddressSmaller = isBaseToken0
+    ? token0.address.toLowerCase() < token1.address.toLowerCase()
+    : token1.address.toLowerCase() < token0.address.toLowerCase();
   return {
     basePoolToken: {
       symbol: assetId,
       address: isBaseToken0 ? token0.address : token1.address,
       decimals: isBaseToken0 ? token0.decimals : token1.decimals,
-      index: isToken0AddressSmaller ? 0 : 1,
+      index: isBaseAddressSmaller ? 0 : 1,
     },
     quotedPoolToken: {
       symbol: isBaseToken0 ? token1.symbol : token0.symbol,
       address: isBaseToken0 ? token1.address : token0.address,
       decimals: isBaseToken0 ? token1.decimals : token0.decimals,
-      index: isToken0AddressSmaller ? 1 : 0,
+      index: isBaseAddressSmaller ? 1 : 0,
     },
   };
 }
@@ -78,12 +96,16 @@ async function queryPrice(assetId) {
   const { basePoolToken, quotedPoolToken } = getPoolTokens(assetId);
   console.log(basePoolToken, quotedPoolToken);
   const isBaseIndex0 = basePoolToken.index === 0;
+  console.log(isBaseIndex0);
+
+  console.log(
+    isBaseIndex0 ? basePoolToken.address : quotedPoolToken.address,
+    isBaseIndex0 ? quotedPoolToken.address : basePoolToken.address
+  );
 
   const sqrtPriceX64 = await poolDetailsContract.queryPrice(
-    "0x0000000000000000000000000000000000000000",
-    "0x4300000000000000000000000000000000000003",
-    // isBaseIndex0 ? basePoolToken.address : quotedPoolToken.address,
-    // isBaseIndex0 ? quotedPoolToken.address : basePoolToken.address,
+    isBaseIndex0 ? basePoolToken.address : quotedPoolToken.address,
+    isBaseIndex0 ? quotedPoolToken.address : basePoolToken.address,
     DEFAULT_POOL_IDX
   );
 
@@ -93,9 +115,7 @@ async function queryPrice(assetId) {
       : basePoolToken.decimals - quotedPoolToken.decimals
   );
   const priceShift = new Decimal(2).toPower(2 * 64);
-  const token0DivToken1Ratio = RedstoneCommon.bignumberishToDecimal(
-    sqrtPriceX64
-  )
+  const token0DivToken1Ratio = bignumberishToDecimal(sqrtPriceX64)
     .toPower(2)
     .div(priceShift)
     .mul(adjustMultiplayer);
