@@ -46,8 +46,34 @@ const abi = [
   },
 ];
 
+const impactAbi = [
+  {
+    inputs: [
+      { internalType: "address", name: "base", type: "address" },
+      { internalType: "address", name: "quote", type: "address" },
+      { internalType: "uint256", name: "poolIdx", type: "uint256" },
+      { internalType: "bool", name: "isBuy", type: "bool" },
+      { internalType: "bool", name: "inBaseQty", type: "bool" },
+      { internalType: "uint128", name: "qty", type: "uint128" },
+      { internalType: "uint16", name: "poolTip", type: "uint16" },
+      { internalType: "uint128", name: "limitPrice", type: "uint128" },
+    ],
+    name: "calcImpact",
+    outputs: [
+      { internalType: "int128", name: "baseFlow", type: "int128" },
+      { internalType: "int128", name: "quoteFlow", type: "int128" },
+      { internalType: "uint128", name: "finalPrice", type: "uint128" },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+];
+
 const AMBIENT_QUERY_CONTRACT_ADDRESS =
   "0xA3BD3bE19012De72190c885FB270beb93e36a8A7";
+
+const AMBIENT_IMPACT_CONTRACT_ADDRESS =
+  "0x6A699AB45ADce02891E6115b81Dfb46CAa5efDb9";
 
 const poolsConfig = {
   USDB: {
@@ -125,7 +151,43 @@ async function queryPrice(assetId) {
     : new Decimal(1).div(token0DivToken1Ratio);
 }
 
-queryPrice("USDB").then(console.log);
+async function getAmountOut(amountIn, tokenIn, tokenOut, contract) {
+  const isTokenInToken0 = tokenIn.index === 0;
+  // priceLimit is uint128 we want its max or min (depends on trade direction)
+  const priceLimit = isTokenInToken0 ? `0x${"ff".repeat(16)}` : "0";
+
+  const ambientImpactResponse = await contract.calcImpact(
+    isTokenInToken0 ? tokenIn.address : tokenOut.address,
+    isTokenInToken0 ? tokenOut.address : tokenIn.address,
+    DEFAULT_POOL_IDX,
+    isTokenInToken0,
+    isTokenInToken0,
+    ethers.utils.parseUnits(amountIn.toString(), tokenIn.decimals).toString(),
+    0,
+    priceLimit
+  );
+
+  return new Decimal(
+    ethers.utils.formatUnits(
+      isTokenInToken0
+        ? ambientImpactResponse.quoteFlow
+        : ambientImpactResponse.baseFlow,
+      tokenOut.decimals
+    )
+  ).mul(-1);
+}
+
+// queryPrice("USDB").then(console.log);
+
+const outContract = new ethers.Contract(
+  AMBIENT_IMPACT_CONTRACT_ADDRESS,
+  impactAbi,
+  provider
+);
+
+const {basePoolToken, quotedPoolToken} = getPoolTokens("USDB");
+
+getAmountOut(new Decimal(10000), basePoolToken, quotedPoolToken, outContract).then(console.log);
 
 // const contract = new ethers.Contract(pool.poolAddress, abiV2, provider);
 

@@ -108,7 +108,7 @@ const pool = {
   fee: 500,
 };
 
-const amountsIn = [0.0002, 0.002, 0.02, 0.2, 2, 20000];
+const amountsIn = [0.0001, 0.001, 0.01, 0.1, 1, 10000];
 
 async function slippageTester() {
   for (const amountIn of amountsIn) {
