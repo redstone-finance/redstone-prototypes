@@ -9,6 +9,7 @@ type GeckoResponse = {
         address: string;
         symbol: string;
         decimals: number;
+        coingecko_coin_id: string;
       };
     }
   ];
@@ -19,7 +20,7 @@ function mapChainNameToGeckoTerminalChainName(chainName: string): string {
   switch (chainName) {
     case "ethereum":
       return "eth";
-    case "arbitrum":
+    case "arbitrumOne":
       return "arbitrum";
     case "avalanche":
       return "avax";
@@ -27,6 +28,8 @@ function mapChainNameToGeckoTerminalChainName(chainName: string): string {
       return "optimism";
     case "canto":
       return "canto";
+    case "base":
+      return "base";
     default:
       console.log(
         `Unsupported chain name: ${chainName}, add it to the mapChainNameToGeckoTerminalChainName function in test/config-validator/validate-tokens-config.spec.ts`
@@ -37,28 +40,76 @@ function mapChainNameToGeckoTerminalChainName(chainName: string): string {
   }
 }
 
+// async function getTokenInfoFromGeckoTerminal(
+//   chainName: string,
+//   addresses: string[]
+// ): Promise<TokenMap> {
+//   const network = mapChainNameToGeckoTerminalChainName(chainName);
+//   const chunkSize = 30; // GeckoTerminal limit is 30 addresses per request
+//   const addressChunks = [];
+//   for (let i = 0; i < addresses.length; i += chunkSize) {
+//     addressChunks.push(addresses.slice(i, i + chunkSize));
+//   }
+
+//   const requests = addressChunks.map((chunk) =>
+//     axios.get<GeckoResponse>(
+//       `https://api.geckoterminal.com/api/v2/networks/${network}/tokens/multi/${chunk.join(
+//         "%2C"
+//       )}`
+//     )
+//   );
+
+//   const responses = await Promise.all(requests);
+//   const tokenMapGecko: TokenMap = {};
+//   responses.forEach((response) => {
+//     response.data.data.forEach((token) => {
+//       tokenMapGecko[token.attributes.symbol.toLowerCase()] = {
+//         address: token.attributes.address,
+//         decimals: token.attributes.decimals,
+//       };
+//     });
+//   });
+
+//   return tokenMapGecko;
+// }
+
 async function getTokenInfoFromGeckoTerminalWithRetry(
   chainName: string,
   addresses: string[]
 ): Promise<TokenMap> {
   const network = mapChainNameToGeckoTerminalChainName(chainName);
+  const chunkSize = 30; // GeckoTerminal limit is 30 addresses per request
+  const addressChunks = [];
+  for (let i = 0; i < addresses.length; i += chunkSize) {
+    addressChunks.push(addresses.slice(i, i + chunkSize));
+  }
+  // addresses = addresses.slice(0, 30); // Only fetch the first 30 tokens
   let attempts = 0;
   const maxAttempts = 5;
   while (attempts < maxAttempts) {
     try {
-      const response = await axios.get<GeckoResponse>(
-        `https://api.geckoterminal.com/api/v2/networks/${network}/tokens/multi/${addresses.join(
-          "%2C"
-        )}`
+      const requests = addressChunks.map((chunk) =>
+        axios.get<GeckoResponse>(
+          `https://api.geckoterminal.com/api/v2/networks/${network}/tokens/multi/${chunk.join(
+            "%2C"
+          )}`
+        )
       );
-      const tokensData = response.data.data;
+      const responses = await Promise.all(requests);
       const tokenMapGecko: TokenMap = {};
-      tokensData.forEach((token) => {
-        tokenMapGecko[token.attributes.symbol.toLowerCase()] = {
-          address: token.attributes.address,
-          decimals: token.attributes.decimals,
-        };
+      responses.forEach((response) => {
+        response.data.data.forEach((token) => {
+          tokenMapGecko[
+            token.attributes.coingecko_coin_id === "usd-coin-ethereum-bridged"
+              ? "usdc.e"
+              : token.attributes.symbol.toLowerCase()
+          ] = {
+            address: token.attributes.address,
+            decimals: token.attributes.decimals,
+          };
+        });
       });
+
       return tokenMapGecko;
     } catch (error) {
       attempts++;
@@ -86,6 +137,13 @@ async function validateTokensConfigOnChain(
     );
     for (const [symbol, tokenInfo] of Object.entries(tokenMap)) {
       const expectedToken = tokenMapGecko[symbol.toLowerCase()];
+      if (!expectedToken) {
+        console.log(
+          `Token ${symbol} on ${chainName} not found on gecko terminal`
+        );
+        result = false;
+        continue;
+      }
       if (
         expectedToken.address.toLowerCase() !==
           tokenInfo.address.toLowerCase() ||
@@ -107,7 +165,7 @@ async function validateTokensConfigOnChain(
 async function validateTokensConfig() {
   const promises: Promise<boolean>[] = [];
   for (const [chain, tokenMap] of Object.entries(chainTokenMap)) {
-    if (chain === "blast") {
+    if (chain === "blast" || chain === "merlin") {
       continue;
     }
     promises.push(validateTokensConfigOnChain(chain, tokenMap));

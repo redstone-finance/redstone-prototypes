@@ -18,5 +18,20 @@
     "name": "chainlink_AAVE/USD",
     "address": "0x8116B273cD75d79C382aFacc706659DEd5E0a59d",
     "network": "ethereum"
+  },
+  {
+    "name": "ETHx/ETH",
+    "address": "0xcf5EA1b38380f6aF39068375516Daf40Ed70D299",
+    "network": "ethereum"
+  },
+  {
+    "name": "ETHx/ETH",
+    "address": "0xcf5EA1b38380f6aF39068375516Daf40Ed70D299",
+    "network": "ethereum"
+  },
+  {
+    "name": "SWETH/ETH",
+    "address": "0xf951e335afb289353dc249e82926178eac7ded78",
+    "network": "ethereum"
   }
 ]

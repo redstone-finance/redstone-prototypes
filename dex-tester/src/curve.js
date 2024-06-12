@@ -11,14 +11,14 @@ const providerUrl = "https://eth-pokt.nodies.app";
 const provider = new ethers.providers.JsonRpcProvider(providerUrl);
 
 const abi = [
-  "function get_dy(int128 i, int128 j, uint256 dx) external view returns (uint256)",
+  "function get_dy_underlying(int128 i, int128 j, uint256 dx) external view returns (uint256)",
 ];
 const abiV2 = [
   "function get_dy(uint256 i, uint256 j, uint256 dx) external view returns (uint256)",
 ];
 
 async function getOutAmount(fromAmount, fromCrypto, toCrypto) {
-  const outAmount = await contract.callStatic.get_dy(
+  const outAmount = await contract.callStatic.get_dy_underlying(
     fromCrypto.index,
     toCrypto.index,
     ethers.utils.parseUnits(fromAmount.toString(), fromCrypto.decimals)
@@ -46,7 +46,7 @@ async function getOutAmount(fromAmount, fromCrypto, toCrypto) {
 // DAO Fee: 0.01% 
 const pool = {
   DEX: "curve-crv",
-  poolAddress: "0xc8eb2cf2f792f77af0cd9e203305a585e588179d",
+  poolAddress: "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7",
   tokenA: {
     index: 0,
     decimals: 18,
@@ -62,7 +62,7 @@ const pool = {
 const contract = new ethers.Contract(pool.poolAddress, abi, provider);
 // const contract = new ethers.Contract(pool.poolAddress, abiV2, provider);
 
-const fromAmount = 0.001;
+const fromAmount = 1;
 // getOutAmount(fromAmount, pool.tokenA, pool.tokenB).then(console.log);
 // getOutAmount(fromAmount, pool.tokenB, pool.tokenA).then(console.log);
 async function test() {
