@@ -1,66 +1,43 @@
 ❯ node calculateGasCosts.js ETHx/ETH
-Total number of transactions: 10000
-Cumulative Gas Costs for contract 'ETHx/ETH': 45.72652852465375 ETH 161987.12313615088 USD
---------------------
-Month: 2023-6
-Number of transactions: 72
-Average number of transactions per day: 2.77
-Cumulative Gas Costs: 0.49949285486358086 ETH 1769.4632240186534 USD
---------------------
-Month: 2023-7
-Number of transactions: 382
-Average number of transactions per day: 12.32
-Cumulative Gas Costs: 1.7468682909040847 ETH 6188.315143773782 USD
---------------------
-Month: 2023-8
-Number of transactions: 166
-Average number of transactions per day: 5.35
-Cumulative Gas Costs: 0.873170310419598 ETH 3093.222931115612 USD
---------------------
-Month: 2023-9
-Number of transactions: 104
-Average number of transactions per day: 3.47
-Cumulative Gas Costs: 0.4362935280589434 ETH 1545.5783706625741 USD
---------------------
-Month: 2023-10
-Number of transactions: 182
-Average number of transactions per day: 5.87
-Cumulative Gas Costs: 0.9373723403759247 ETH 3320.6598800307074 USD
---------------------
-Month: 2023-11
-Number of transactions: 350
-Average number of transactions per day: 11.67
-Cumulative Gas Costs: 2.8622242264034354 ETH 10139.48539644144 USD
---------------------
-Month: 2023-12
-Number of transactions: 4576
-Average number of transactions per day: 147.61
-Cumulative Gas Costs: 27.695157507625154 ETH 98110.63805213168 USD
+Total number of transactions: 231
+Cumulative Gas Costs for contract 'ETHx/ETH': 1.027682850146226 ETH 3640.9544482644756 USD
 --------------------
 Month: 2024-1
-Number of transactions: 4168
-Average number of transactions per day: 134.45
-Cumulative Gas Costs: 10.675949466003248 ETH 37819.76013797794 USD
+Number of transactions: 19
+Average number of transactions per day: 1.19
+Cumulative Gas Costs: 0.05845241076007089 ETH 207.08973097914458 USD
 --------------------
-
-
-
+Month: 2024-2
+Number of transactions: 43
+Average number of transactions per day: 1.48
+Cumulative Gas Costs: 0.09432273815102375 ETH 334.17390685715 USD
+--------------------
+Month: 2024-3
+Number of transactions: 46
+Average number of transactions per day: 1.48
+Cumulative Gas Costs: 0.13870794561532038 ETH 491.42525977335225 USD
+--------------------
+Month: 2024-4
+Number of transactions: 74
+Average number of transactions per day: 2.47
+Cumulative Gas Costs: 0.7024377080855977 ETH 2488.6507520477317 USD
+--------------------
+Month: 2024-5
+Number of transactions: 36
+Average number of transactions per day: 1.16
+Cumulative Gas Costs: 0.021993531859088238 ETH 77.92038919789294 USD
+--------------------
+Month: 2024-6
+Number of transactions: 13
+Average number of transactions per day: 1.08
+Cumulative Gas Costs: 0.011768515675124807 ETH 41.694409409205456 USD
+--------------------
 ❯ node calculateGasCosts.js SWETH/ETH
-Total number of transactions: 10000
-Cumulative Gas Costs for contract 'SWETH/ETH': 40.66461331091327 ETH 143881.78409029706 USD
+Total number of transactions: 1
+Cumulative Gas Costs for contract 'SWETH/ETH': 0.003795457733280288 ETH 13.446011242387593 USD
 --------------------
-Month: 2023-4
-Number of transactions: 1128
-Average number of transactions per day: 59.37
-Cumulative Gas Costs: 4.400763795269179 ETH 15571.02587898909 USD
---------------------
-Month: 2023-5
-Number of transactions: 7765
-Average number of transactions per day: 250.48
-Cumulative Gas Costs: 33.82821784411732 ETH 119692.87150950466 USD
---------------------
-Month: 2023-6
-Number of transactions: 1107
-Average number of transactions per day: 36.9
-Cumulative Gas Costs: 2.4356316715267496 ETH 8617.886701803443 USD
+Month: 2023-10
+Number of transactions: 1
+Average number of transactions per day: 0.05
+Cumulative Gas Costs: 0.003795457733280288 ETH 13.446011242387593 USD
 --------------------

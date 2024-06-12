@@ -21,17 +21,12 @@
   },
   {
     "name": "ETHx/ETH",
-    "address": "0xcf5EA1b38380f6aF39068375516Daf40Ed70D299",
-    "network": "ethereum"
-  },
-  {
-    "name": "ETHx/ETH",
-    "address": "0xcf5EA1b38380f6aF39068375516Daf40Ed70D299",
+    "address": "0xc799194cAa24E2874Efa89b4Bf5c92a530B047FF",
     "network": "ethereum"
   },
   {
     "name": "SWETH/ETH",
-    "address": "0xf951e335afb289353dc249e82926178eac7ded78",
+    "address": "0x0704eEc81ea7CF98Aa4A400c65DC4ED5933bddf7",
     "network": "ethereum"
   }
 ]
