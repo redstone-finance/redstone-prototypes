@@ -35,6 +35,28 @@ Cumulative Gas Costs: 0.011768515675124807 ETH 41.694409409205456 USD
 
 
 
+
+
+❯ node calculateGasCosts.js SWETH/ETH
+Total number of transactions: 1
+Cumulative Gas Costs for contract 'SWETH/ETH': 0.003795457733280288 ETH 13.432201577273386 USD
+--------------------
+Month: 2023-10
+Number of transactions: 1
+Average number of transactions per day: 0.05
+Cumulative Gas Costs: 0.003795457733280288 ETH 13.432201577273386 USD
+--------------------
+
+
+
+
+
+
+
+
+
+
+
 ❯ node calculateGasCosts.js swell
 Total number of transactions: 8516
 Cumulative Gas Costs for contract 'swell': 49.029284068395974 ETH 173715.24821564773 USD
