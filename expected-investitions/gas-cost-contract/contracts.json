@@ -20,13 +20,53 @@
     "network": "ethereum"
   },
   {
-    "name": "ETHx/ETH",
+    "name": "SWETH/ETH",
+    "address": "0x061bB36F8b67bB922937C102092498dcF4619F86",
+    "network": "ethereum"
+  },
+  {
+    "name": "ETHxETH",
     "address": "0xc799194cAa24E2874Efa89b4Bf5c92a530B047FF",
     "network": "ethereum"
   },
   {
-    "name": "SWETH/ETH",
-    "address": "0x061bB36F8b67bB922937C102092498dcF4619F86",
+    "name": "osETH/ETH",
+    "address": "0x66ac817f997Efd114EDFcccdce99F3268557B32C",
+    "network": "ethereum"
+  },
+  {
+    "name": "apxETH/ETH",
+    "address": "0x19219BC90F48DeE4d5cF202E09c438FAacFd8Bea",
+    "network": "ethereum"
+  },
+  {
+    "name": "rsETH/ETH",
+    "address": "0xA736eAe8805dDeFFba40cAB8c99bCB309dEaBd9B",
+    "network": "ethereum"
+  },
+  {
+    "name": "ezETH/ETH",
+    "address": "0xF4a3e183F59D2599ee3DF213ff78b1B3b1923696",
+    "network": "ethereum"
+  },
+  {
+    "name": "rswETH/ETH",
+    "address": "0x3A236F67Fce401D87D7215695235e201966576E4",
+    "network": "ethereum"
+  },
+  {
+    "name": "pufETH/ETH",
+    "address": "0x76A495b0bFfb53ef3F0E94ef0763e03cE410835C",
+    "network": "ethereum"
+  },
+  {
+    "name": "ETH+/ETH",
+    "address": "0x3B9c09bde7776C32C518e2E787412A9bBaA7685F",
+    "network": "ethereum"
+  },
+  {
+    "name": "sfrxETH/ETH",
+    "address": "0xdd60c54115C19e0c6360AD4762B88BB8076D50a8",
     "network": "ethereum"
   }
 ]
