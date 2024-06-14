@@ -269,11 +269,36 @@ Cumulative Gas Costs: 0.10464971871198354 ETH 367.3595121653204 USD
 
 
 ❯ node calculateGasCosts.js ETHx/USD
-Total number of transactions: 1
-Cumulative Gas Costs for contract 'ETHx/USD': 0.0132868317705629 ETH 46.795636929800644 USD
+Total number of transactions: 1341
+Cumulative Gas Costs for contract 'ETHx/USD': 4.066305504562659 ETH 14291.159700140877 USD
 --------------------
-Month: 2023-9
-Number of transactions: 1
-Average number of transactions per day: 0.05
-Cumulative Gas Costs: 0.0132868317705629 ETH 46.795636929800644 USD
+Month: 2024-1
+Number of transactions: 21
+Average number of transactions per day: 7
+Cumulative Gas Costs: 0.048944115466177544 ETH 172.01564656773294 USD
+--------------------
+Month: 2024-2
+Number of transactions: 201
+Average number of transactions per day: 6.93
+Cumulative Gas Costs: 0.7928347547349527 ETH 2786.442898357151 USD
+--------------------
+Month: 2024-3
+Number of transactions: 443
+Average number of transactions per day: 14.29
+Cumulative Gas Costs: 1.7117589194398803 ETH 6016.031028265531 USD
+--------------------
+Month: 2024-4
+Number of transactions: 372
+Average number of transactions per day: 12.4
+Cumulative Gas Costs: 1.1276482871318296 ETH 3963.1556799922546 USD
+--------------------
+Month: 2024-5
+Number of transactions: 247
+Average number of transactions per day: 7.97
+Cumulative Gas Costs: 0.2939839585635513 ETH 1033.215949071482 USD
+--------------------
+Month: 2024-6
+Number of transactions: 57
+Average number of transactions per day: 4.07
+Cumulative Gas Costs: 0.09113546922626709 ETH 320.2984978867039 USD
 --------------------
