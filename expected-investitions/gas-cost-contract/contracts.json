@@ -68,5 +68,10 @@
     "name": "sfrxETH/ETH",
     "address": "0xdd60c54115C19e0c6360AD4762B88BB8076D50a8",
     "network": "ethereum"
+  },
+  {
+    "name": "ETHx/USD",
+    "address": "0xFaBEb1474C2Ab34838081BFdDcE4132f640E7D2d",
+    "network": "ethereum"
   }
 ]
